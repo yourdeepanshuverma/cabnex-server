@@ -16,7 +16,7 @@ export const sendOtpSms = async (phone, otp, forWhat = "registration") => {
     apikey: process.env.NEXTINCLOUD_APIKEY,
     signature: process.env.NEXTINCLOUD_SIGNATURE,
     msgtype: "PM",
-    msgtxt: `Dear User, Welcome to Nexfleet Car Rentel! Your OTP for ${forWhat} is ${otp}. Valid for 5 minutes. Please do not share this OTP. Regards, Nexfleet Tech`,
+    msgtxt: `Dear User, Welcome to Nexfleet Car Rentel! Your OTP for login is ${otp}. Valid for 5 minutes. Please do not share this OTP. Regards, Nexfleet Tech`,
     VAR1: otp,
     entityid: process.env.NEXTINCLOUD_ENTITY_ID,
     templateid: process.env.NEXTINCLOUD_TEMPLATE_ID,
