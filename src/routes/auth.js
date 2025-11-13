@@ -8,10 +8,13 @@ import {
   login,
   logout,
   register,
+  resetPassword,
   searchCarsForTrip,
+  sendForgotPasswordOtp,
   travelQuery,
   updateDetails,
   userStats,
+  verifyForgotPasswordOtp,
 } from "../controllers/auth.js";
 import { getAuthCookies } from "../middlewares/authMiddleware.js";
 
@@ -21,7 +24,10 @@ const router = Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/travel-query", travelQuery);
-// router.put("/forget-password", forgetPassword);
+
+router.post("/send-forget-otp", sendForgotPasswordOtp);
+router.post("/verify-forget-otp", verifyForgotPasswordOtp);
+router.post("/reset-password", resetPassword);
 
 // Protected routes
 router.use(getAuthCookies);

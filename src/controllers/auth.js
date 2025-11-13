@@ -11,6 +11,7 @@ import generateToken from "../utils/generateToken.js";
 import { calculateTax, generateOtp } from "../utils/helper.js";
 import SuccessResponse from "../utils/SuccessResponse.js";
 import redis from "../utils/redisClient.js";
+import { sendOtpSms } from "../utils/smsService.js";
 
 const cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 30,
@@ -120,7 +121,7 @@ const sendForgotPasswordOtp = asyncHandler(async (req, res, next) => {
   if (!phone || !/^[6-9]\d{9}$/.test(phone))
     return next(new ErrorResponse(400, "Invalid phone number"));
 
-  const user = await User.findOne({ phone });
+  const user = await User.findOne({ mobile: phone });
   if (!user) return next(new ErrorResponse(404, "User not found"));
 
   // Prevent resending too fast
@@ -141,12 +142,12 @@ const sendForgotPasswordOtp = asyncHandler(async (req, res, next) => {
 const verifyForgotPasswordOtp = asyncHandler(async (req, res, next) => {
   const { phone, otp } = req.body;
 
-  const storedOtp = await redis.get(`otp:${phone}`);
+  const storedOtp = await redis.get(`forget_password_otp:${phone}`);
   if (!storedOtp) return next(new ErrorResponse(400, "OTP expired or invalid"));
   if (storedOtp !== otp) return next(new ErrorResponse(400, "Invalid OTP"));
 
   // OTP verified → allow user to reset password
-  await redis.del(`otp:${phone}`);
+  await redis.del(`forget_password_otp:${phone}`);
   await redis.setex(`resetToken:${phone}`, 600, "verified"); // 10 min reset token
 
   res
@@ -154,6 +155,27 @@ const verifyForgotPasswordOtp = asyncHandler(async (req, res, next) => {
     .json(
       new SuccessResponse(200, "OTP verified, you may now reset your password.")
     );
+});
+
+// Reset password
+const resetPassword = asyncHandler(async (req, res, next) => {
+  const { phone, newPassword } = req.body;
+
+  const verified = await redis.get(`resetToken:${phone}`);
+
+  if (!verified)
+    return next(
+      new ErrorResponse(403, "Session expired. Please reverify OTP.")
+    );
+
+  const user = await User.findOne({ mobile: phone });
+  if (!user) return next(new ErrorResponse(404, "User not found"));
+
+  user.password = newPassword;
+  await user.save();
+
+  await redis.del(`resetToken:${phone}`); // invalidate token
+  res.status(200).json(new SuccessResponse(200, "Password reset successfully"));
 });
 
 // Change password
@@ -588,6 +610,7 @@ const travelQuery = asyncHandler(async (req, res, next) => {
 export {
   sendForgotPasswordOtp,
   verifyForgotPasswordOtp,
+  resetPassword,
   changePassword,
   userStats,
   cancelBooking,
