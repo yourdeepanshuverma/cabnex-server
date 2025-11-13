@@ -127,8 +127,8 @@ const sendForgotPasswordOtp = asyncHandler(async (req, res, next) => {
   // Prevent resending too fast
   if (await redis.get(`forget_password_otp:${phone}`)) {
     return res
-      .status(429)
-      .json(new ErrorResponse(429, "OTP already sent. Please wait."));
+      .status(400)
+      .json(new ErrorResponse(400, "OTP already sent. Please wait."));
   }
 
   const otp = generateOtp();
