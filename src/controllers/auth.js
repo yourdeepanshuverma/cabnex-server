@@ -8,8 +8,9 @@ import User from "../models/User.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ErrorResponse from "../utils/ErrorResponse.js";
 import generateToken from "../utils/generateToken.js";
-import { calculateTax } from "../utils/helper.js";
+import { calculateTax, generateOtp } from "../utils/helper.js";
 import SuccessResponse from "../utils/SuccessResponse.js";
+import redis from "../utils/redisClient.js";
 
 const cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 30,
@@ -53,19 +54,11 @@ const getUser = asyncHandler(async (req, res) => {
 
 // Register a new user
 const register = asyncHandler(async (req, res, next) => {
-  const { email, mobile, otp } = req.body;
+  const { email, mobile } = req.body;
 
   const existingUser = await User.findOne({ $or: [{ mobile }, { email }] });
   if (existingUser) {
     return next(new ErrorResponse(409, "User already exists"));
-  }
-
-  if (!otp) {
-    return next(new ErrorResponse(400, "OTP is required"));
-  }
-
-  if (otp !== process.env.sampleOtp) {
-    return next(new ErrorResponse(401, "Invalid OTP"));
   }
 
   const user = await User.create(req.body);
@@ -91,7 +84,7 @@ const register = asyncHandler(async (req, res, next) => {
 
 // Login user
 const login = asyncHandler(async (req, res, next) => {
-  const { email, password, mobile, otp } = req.body;
+  const { email, password, mobile } = req.body;
 
   const user = await User.findOne({ $or: [{ mobile }, { email }] }).select(
     "+password"
@@ -99,20 +92,6 @@ const login = asyncHandler(async (req, res, next) => {
 
   if (!user) {
     return next(new ErrorResponse(401, "Invalid email or password"));
-  }
-
-  if (otp) {
-    if (!otp || otp === "") {
-      return next(new ErrorResponse(400, "OTP is required"));
-    }
-
-    if (otp !== process.env.sampleOtp) {
-      return next(new ErrorResponse(401, "Invalid OTP"));
-    }
-
-    return res
-      .cookie("cabnex_token", generateToken(user._id, "30d"), cookieOptions)
-      .json(new SuccessResponse(200, "User logged in successfully"));
   }
 
   if (!(await user.isPasswordCorrect(password))) {
@@ -134,30 +113,47 @@ const login = asyncHandler(async (req, res, next) => {
     .json(new SuccessResponse(200, "User logged in successfully", userData));
 });
 
-// Forget password
-const forgetPassword = asyncHandler(async (req, res, next) => {
-  const { email, mobile, password, otp } = req.body;
+// Forget password - send OTP
+const sendForgotPasswordOtp = asyncHandler(async (req, res, next) => {
+  const { phone } = req.body;
 
-  const user = await User.findOne({
-    $or: [{ email }, { mobile }],
-  }).select("+password");
+  if (!phone || !/^[6-9]\d{9}$/.test(phone))
+    return next(new ErrorResponse(400, "Invalid phone number"));
 
-  if (!user) {
-    return next(new ErrorResponse(404, "User not found"));
+  const user = await User.findOne({ phone });
+  if (!user) return next(new ErrorResponse(404, "User not found"));
+
+  // Prevent resending too fast
+  if (await redis.get(`forget_password_otp:${phone}`)) {
+    return res
+      .status(429)
+      .json(new ErrorResponse(429, "OTP already sent. Please wait."));
   }
 
-  if (!otp || otp === "") {
-    return next(new ErrorResponse(400, "OTP is required"));
-  }
+  const otp = generateOtp();
+  await redis.setex(`forget_password_otp:${phone}`, 300, otp); // expires in 5 min
 
-  if (otp !== process.env.sampleOtp) {
-    return next(new ErrorResponse(401, "Invalid OTP"));
-  }
+  await sendOtpSms(phone, otp, "password reset");
+  res.status(200).json(new SuccessResponse(200, "OTP sent successfully"));
+});
 
-  user.password = password;
-  await user.save();
+// Verify OTP for forget password
+const verifyForgotPasswordOtp = asyncHandler(async (req, res, next) => {
+  const { phone, otp } = req.body;
 
-  res.status(200).json(new SuccessResponse(200, "Password reset successfully"));
+  const storedOtp = await redis.get(`otp:${phone}`);
+  if (!storedOtp) return next(new ErrorResponse(400, "OTP expired or invalid"));
+  if (storedOtp !== otp) return next(new ErrorResponse(400, "Invalid OTP"));
+
+  // OTP verified → allow user to reset password
+  await redis.del(`otp:${phone}`);
+  await redis.setex(`resetToken:${phone}`, 600, "verified"); // 10 min reset token
+
+  res
+    .status(200)
+    .json(
+      new SuccessResponse(200, "OTP verified, you may now reset your password.")
+    );
 });
 
 // Change password

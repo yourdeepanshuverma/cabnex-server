@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.js";
 import packageRoutes from "./routes/package.js";
 import vendorRoutes from "./routes/vendor.js";
 import transactionRoutes from "./routes/transaction.js";
+import otpRoutes from "./routes/otp.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -71,6 +72,7 @@ app.use("/api/v1/vendor", vendorRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/package", packageRoutes);
 app.use("/api/v1/transaction", transactionRoutes);
+app.use("/api/v1/otp", otpRoutes);
 
 app.use(errorMiddleware);
 

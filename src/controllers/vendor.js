@@ -91,7 +91,7 @@ const vendorRegister = asyncHandler(async (req, res, next) => {
 
 // Login vendor
 const vendorLogin = asyncHandler(async (req, res, next) => {
-  const { email, contactPhone, password, otp } = req.body;
+  const { email, contactPhone, password } = req.body;
 
   const vendor = await Vendor.findOne({
     $or: [{ email }, { contactPhone }],
@@ -99,19 +99,6 @@ const vendorLogin = asyncHandler(async (req, res, next) => {
 
   if (!vendor) {
     return next(new ErrorResponse(401, "Invalid email or password"));
-  }
-
-  if (otp) {
-    if (!otp || otp === "") {
-      return next(new ErrorResponse(400, "OTP is required"));
-    }
-    if (otp !== process.env.sampleOtp) {
-      return next(new ErrorResponse(401, "Invalid OTP"));
-    }
-
-    return res
-      .cookie("cabnex_vendor", generateToken(vendor._id), cookieOptions)
-      .json(new SuccessResponse(200, "Vendor logged in successfully", vendor));
   }
 
   if (!(await vendor.isPasswordCorrect(password))) {
