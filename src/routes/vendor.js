@@ -4,7 +4,6 @@ import {
   completeBooking,
   dashboardStats,
   deleteVendorCar,
-  forgetPassword,
   getAVendorCar,
   getVendor,
   getVendorCars,
