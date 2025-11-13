@@ -191,7 +191,7 @@ const verifyForgotPasswordOtp = asyncHandler(async (req, res, next) => {
 
   // OTP verified → allow user to reset password
   await redis.del(`forget_password_otp:${phone}`);
-  await redis.setex(`resetToken:${phone}`, 600, "verified"); // 10 min reset token
+  await redis.setex(`resetVendorToken:${phone}`, 600, "verified"); // 10 min reset token
 
   res
     .status(200)
@@ -204,7 +204,7 @@ const verifyForgotPasswordOtp = asyncHandler(async (req, res, next) => {
 const resetPassword = asyncHandler(async (req, res, next) => {
   const { phone, newPassword } = req.body;
 
-  const verified = await redis.get(`resetToken:${phone}`);
+  const verified = await redis.get(`resetVendorToken:${phone}`);
 
   if (!verified)
     return next(
@@ -217,7 +217,7 @@ const resetPassword = asyncHandler(async (req, res, next) => {
   vendor.password = newPassword;
   await vendor.save();
 
-  await redis.del(`resetToken:${phone}`); // invalidate token
+  await redis.del(`resetVendorToken:${phone}`); // invalidate token
   res.status(200).json(new SuccessResponse(200, "Password reset successfully"));
 });
 
