@@ -586,11 +586,12 @@ const travelQuery = asyncHandler(async (req, res, next) => {
 });
 
 export {
+  sendForgotPasswordOtp,
+  verifyForgotPasswordOtp,
   changePassword,
   userStats,
   cancelBooking,
   deleteUser,
-  forgetPassword,
   getBookings,
   getUser,
   login,

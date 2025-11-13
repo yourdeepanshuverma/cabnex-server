@@ -3,7 +3,6 @@ import {
   cancelBooking,
   changePassword,
   deleteUser,
-  forgetPassword,
   getBookings,
   getUser,
   login,
@@ -22,7 +21,7 @@ const router = Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/travel-query", travelQuery);
-router.put("/forget-password", forgetPassword);
+// router.put("/forget-password", forgetPassword);
 
 // Protected routes
 router.use(getAuthCookies);
