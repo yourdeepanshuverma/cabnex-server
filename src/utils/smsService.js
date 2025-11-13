@@ -7,7 +7,7 @@ import axios from "axios";
  * @param {string} forWhat -default: "registration" -  Purpose of the OTP (e.g., login, registration, forgot password, etc.)
  */
 
-export const sendOtpSms = async (phone, otp, forWhat = "registration") => {
+export const sendOtpSms = async (phone, otp) => {
   const baseUrl = process.env.NEXTINCLOUD_API;
 
   const params = {
@@ -30,12 +30,7 @@ export const sendOtpSms = async (phone, otp, forWhat = "registration") => {
 
   const url = `${baseUrl}?${queryString}`;
 
-  console.log("📤 Sending OTP to:", phone);
-  console.log("🔗 SMS API URL:", url);
-
   const { data } = await axios.get(url);
-
-  console.log(data);
 
   return data;
 };

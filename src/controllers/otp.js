@@ -31,7 +31,6 @@ const sendOtp = asyncHandler(async (req, res, next) => {
     // 2️⃣ Send SMS
     await sendOtpSms(phone, otp, forWhat);
 
-    console.log(`📤 OTP ${otp} sent to ${phone}`);
     res.status(200).json(new SuccessResponse(200, "OTP sent successfully"));
   } catch (err) {
     console.error("OTP Send Error:", err.message);
