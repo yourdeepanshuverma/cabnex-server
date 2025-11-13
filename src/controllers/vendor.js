@@ -8,7 +8,8 @@ import {
 } from "../utils/cloudinary.js";
 import ErrorResponse from "../utils/ErrorResponse.js";
 import generateToken from "../utils/generateToken.js";
-import { vendorMonthlyBookings } from "../utils/helper.js";
+import { generateOtp, vendorMonthlyBookings } from "../utils/helper.js";
+import redis from "../utils/redisClient.js";
 import SuccessResponse from "../utils/SuccessResponse.js";
 
 const cookieOptions = {
@@ -155,29 +156,67 @@ const logoutVendor = asyncHandler(async (req, res, next) => {
     .json(new SuccessResponse(200, "Vendor logged out successfully"));
 });
 
-// Forget password
-const forgetPassword = asyncHandler(async (req, res, next) => {
-  const { email, contactPhone, password, otp } = req.body;
+// Forget password - send OTP
+const sendForgotPasswordOtp = asyncHandler(async (req, res, next) => {
+  const { phone } = req.body;
 
-  const vendor = await Vendor.findOne({
-    $or: [{ email }, { contactPhone }],
-  }).select("+password");
+  if (!phone || !/^[6-9]\d{9}$/.test(phone))
+    return next(new ErrorResponse(400, "Invalid phone number"));
 
-  if (!vendor) {
-    return next(new ErrorResponse(404, "Vendor not found"));
+  const vendor = await Vendor.findOne({ contactPhone: phone });
+  if (!vendor) return next(new ErrorResponse(404, "Vendor not found"));
+
+  // Prevent resending too fast
+  if (await redis.get(`forget_password_otp:${phone}`)) {
+    return res
+      .status(429)
+      .json(new ErrorResponse(429, "OTP already sent. Please wait."));
   }
 
-  if (!otp || otp === "") {
-    return next(new ErrorResponse(400, "OTP is required"));
-  }
+  const otp = generateOtp();
+  await redis.setex(`forget_password_otp:${phone}`, 300, otp); // expires in 5 min
 
-  if (otp !== process.env.sampleOtp) {
-    return next(new ErrorResponse(401, "Invalid OTP"));
-  }
+  await sendOtpSms(phone, otp, "password reset");
+  res.status(200).json(new SuccessResponse(200, "OTP sent successfully"));
+});
 
-  vendor.password = password;
+// Verify OTP for forget password
+const verifyForgotPasswordOtp = asyncHandler(async (req, res, next) => {
+  const { phone, otp } = req.body;
+
+  const storedOtp = await redis.get(`forget_password_otp:${phone}`);
+  if (!storedOtp) return next(new ErrorResponse(400, "OTP expired or invalid"));
+  if (storedOtp !== otp) return next(new ErrorResponse(400, "Invalid OTP"));
+
+  // OTP verified → allow user to reset password
+  await redis.del(`forget_password_otp:${phone}`);
+  await redis.setex(`resetToken:${phone}`, 600, "verified"); // 10 min reset token
+
+  res
+    .status(200)
+    .json(
+      new SuccessResponse(200, "OTP verified, you may now reset your password.")
+    );
+});
+
+// Reset password
+const resetPassword = asyncHandler(async (req, res, next) => {
+  const { phone, newPassword } = req.body;
+
+  const verified = await redis.get(`resetToken:${phone}`);
+
+  if (!verified)
+    return next(
+      new ErrorResponse(403, "Session expired. Please reverify OTP.")
+    );
+
+  const vendor = await Vendor.findOne({ contactPhone: phone });
+  if (!vendor) return next(new ErrorResponse(404, "Vendor not found"));
+
+  vendor.password = newPassword;
   await vendor.save();
 
+  await redis.del(`resetToken:${phone}`); // invalidate token
   res.status(200).json(new SuccessResponse(200, "Password reset successfully"));
 });
 
@@ -386,7 +425,9 @@ export {
   getVendor,
   getVendorCars,
   logoutVendor,
-  forgetPassword,
+  sendForgotPasswordOtp,
+  verifyForgotPasswordOtp,
+  resetPassword,
   updateVendorCar,
   updateVendorProfile,
   vendorLogin,

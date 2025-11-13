@@ -9,12 +9,15 @@ import {
   getVendor,
   getVendorCars,
   logoutVendor,
+  resetPassword,
+  sendForgotPasswordOtp,
   updateVendorCar,
   updateVendorProfile,
   vendorBookings,
   vendorLogin,
   vendorRegister,
   vendorStats,
+  verifyForgotPasswordOtp,
 } from "../controllers/vendor.js";
 import { getVendorCookies } from "../middlewares/authMiddleware.js";
 import { createArrayUpload, upload } from "../middlewares/mutler.js";
@@ -24,7 +27,9 @@ const router = Router();
 // Public routes
 router.post("/register", vendorRegister);
 router.post("/login", vendorLogin);
-router.put("/forget-password", forgetPassword);
+router.post("/send-forget-otp", sendForgotPasswordOtp);
+router.post("/verify-forget-otp", verifyForgotPasswordOtp);
+router.post("/reset-password", resetPassword);
 
 // Protected routes
 router.use(getVendorCookies);
