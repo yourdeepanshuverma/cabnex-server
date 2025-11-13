@@ -10,6 +10,7 @@ import ErrorResponse from "../utils/ErrorResponse.js";
 import generateToken from "../utils/generateToken.js";
 import { generateOtp, vendorMonthlyBookings } from "../utils/helper.js";
 import redis from "../utils/redisClient.js";
+import { sendOtpSms } from "../utils/smsService.js";
 import SuccessResponse from "../utils/SuccessResponse.js";
 
 const cookieOptions = {
