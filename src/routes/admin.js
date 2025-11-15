@@ -28,6 +28,7 @@ import {
   getCarDetails,
   getCities,
   getCityNames,
+  getContactUsFormSubmissions,
   getTravelQueries,
   getUserDetails,
   getVendorDetails,
@@ -132,6 +133,9 @@ router
 
 router.post("/create-user", createUser);
 router.post("/create-vendor", createVendor);
+
+// Contact us form submissions route
+router.get("/contact-us", getContactUsFormSubmissions);
 
 // Admin logout route
 router.post("/logout", adminLogout);

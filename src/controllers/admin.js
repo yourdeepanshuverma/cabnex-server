@@ -1183,7 +1183,21 @@ const contactUsFormSubmission = asyncHandler(async (req, res, next) => {
     .json(new SuccessResponse(201, "Contact us form submitted successfully"));
 });
 
+const getContactUsFormSubmissions = asyncHandler(async (req, res, next) => {
+  const submissions = await ContactUsForm.find().sort({ createdAt: -1 });
+  res
+    .status(200)
+    .json(
+      new SuccessResponse(
+        200,
+        "Contact us form submissions fetched successfully",
+        submissions
+      )
+    );
+});
+
 export {
+  getContactUsFormSubmissions,
   contactUsFormSubmission,
   getTravelQueries,
   createUser,
