@@ -3,6 +3,7 @@ import Car from "../models/Car.js";
 import CarCategory from "../models/CarCategory.js";
 import City from "../models/City.js";
 import Transfer from "../models/Transfer.js";
+import TravelQuery from "../models/TravelQuery.js";
 import User from "../models/User.js";
 import Vendor from "../models/Vendor.js";
 import WebsiteSetting from "../models/WebsiteSetting.js";
@@ -1144,7 +1145,17 @@ const createVendor = asyncHandler(async (req, res, next) => {
     .json(new SuccessResponse(201, `${vendor.company} created successfully`));
 });
 
+const getTravelQueries = asyncHandler(async (req, res, next) => {
+  const queries = await TravelQuery.find().sort({ createdAt: -1 });
+  res
+    .status(200)
+    .json(
+      new SuccessResponse(200, "Travel queries fetched successfully", queries)
+    );
+});
+
 export {
+  getTravelQueries,
   createUser,
   createVendor,
   getCityNames,

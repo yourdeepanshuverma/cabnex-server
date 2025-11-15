@@ -27,6 +27,7 @@ import {
   getCarDetails,
   getCities,
   getCityNames,
+  getTravelQueries,
   getUserDetails,
   getVendorDetails,
   getWebsiteSetting,
@@ -109,6 +110,9 @@ router
   )
   .patch(addCarToCategory)
   .delete(deleteCarCategory);
+
+// Travel queries management routes
+router.get("/travel-queries", getTravelQueries);
 
 // Car management routes
 router.get("/car-stats", carStats);
