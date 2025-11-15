@@ -2,6 +2,7 @@ import Booking from "../models/Booking.js";
 import Car from "../models/Car.js";
 import CarCategory from "../models/CarCategory.js";
 import City from "../models/City.js";
+import ContactUsForm from "../models/ContactUsForm.js";
 import Transfer from "../models/Transfer.js";
 import TravelQuery from "../models/TravelQuery.js";
 import User from "../models/User.js";
@@ -1173,7 +1174,17 @@ const getTravelQueries = asyncHandler(async (req, res, next) => {
     );
 });
 
+const contactUsFormSubmission = asyncHandler(async (req, res, next) => {
+  const { name, email, subject, message } = req.body;
+  await ContactUsForm.create({ name, email, subject, message });
+
+  res
+    .status(201)
+    .json(new SuccessResponse(201, "Contact us form submitted successfully"));
+});
+
 export {
+  contactUsFormSubmission,
   getTravelQueries,
   createUser,
   createVendor,

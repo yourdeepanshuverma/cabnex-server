@@ -15,6 +15,7 @@ import {
   bookingStats,
   carStats,
   checkAdmin,
+  contactUsFormSubmission,
   createUser,
   createVendor,
   createWebsiteSetting,
@@ -130,6 +131,9 @@ router
 
 router.post("/create-user", createUser);
 router.post("/create-vendor", createVendor);
+
+// Contact us form submission route
+router.post("/contact-us", contactUsFormSubmission);
 
 // Admin logout route
 router.post("/logout", adminLogout);
