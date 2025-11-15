@@ -52,6 +52,7 @@ const router = Router();
 router.get("/website-setting", getWebsiteSetting);
 router.post("/login", adminLogin);
 router.get("/car-categories", getAllCarCategories);
+router.post("/contact-us", contactUsFormSubmission);
 
 router.use(getAdminCookies);
 
@@ -131,9 +132,6 @@ router
 
 router.post("/create-user", createUser);
 router.post("/create-vendor", createVendor);
-
-// Contact us form submission route
-router.post("/contact-us", contactUsFormSubmission);
 
 // Admin logout route
 router.post("/logout", adminLogout);
