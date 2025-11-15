@@ -7,7 +7,6 @@ import SuccessResponse from "../utils/SuccessResponse.js";
 import Transaction from "../models/Transaction.js";
 import axios from "axios";
 import User from "../models/User.js";
-import { log } from "console";
 
 const getRazorpayKey = asyncHandler(async (req, res) => {
   res
@@ -55,8 +54,6 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
       razorpaySignature,
       serviceType,
     } = req.body;
-
-    log("req.body:", req.body);
 
     // ✅ Verify signature
     const sign = razorpayOrderId + "|" + razorpayPaymentId;
