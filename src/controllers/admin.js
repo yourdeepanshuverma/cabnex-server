@@ -87,6 +87,9 @@ const updateWebsiteSettingBasics = asyncHandler(async (req, res, next) => {
     }
   }
 
+  if (req.body) {
+  }
+
   if (req?.files?.length) {
     for (const file of req.files) {
       const match = file.fieldname.match(/reviews\[(\d+)\]\[profile\]/);
@@ -105,9 +108,15 @@ const updateWebsiteSettingBasics = asyncHandler(async (req, res, next) => {
           await deleteFromCloudinary([existingProfile]);
         }
 
-        setting.reviews[index].profile = {
-          url: uploaded[0].url,
-          public_id: uploaded[0].public_id,
+        setting.reviews[index] = {
+          name: req.body.reviews[index].name,
+          role: req.body.reviews[index].role,
+          rating: req.body.reviews[index].rating,
+          comment: req.body.reviews[index].comment,
+          profile: {
+            url: uploaded[0].url,
+            public_id: uploaded[0].public_id,
+          },
         };
       } else {
         const uploaded = await uploadToCloudinary([file]);
@@ -143,6 +152,16 @@ const updateWebsiteSettingBasics = asyncHandler(async (req, res, next) => {
         };
       }
     }
+  } else if (req.body.reviews) {
+    // If no files uploaded, just update reviews data
+    setting.reviews.map((review, index) => {
+      if (req.body.reviews[index]) {
+        review.name = req.body.reviews[index].name || review.name;
+        review.role = req.body.reviews[index].role || review.role;
+        review.rating = req.body.reviews[index].rating || review.rating;
+        review.comment = req.body.reviews[index].comment || review.comment;
+      }
+    });
   }
 
   // --- Update all other fields ---
