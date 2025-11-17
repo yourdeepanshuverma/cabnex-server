@@ -94,6 +94,8 @@ const vendorRegister = asyncHandler(async (req, res, next) => {
 // Login vendor
 const vendorLogin = asyncHandler(async (req, res, next) => {
   const { email, contactPhone, password } = req.body;
+  email = email?.toLowerCase().trim();
+  contactPhone = contactPhone?.trim();
 
   const vendor = await Vendor.findOne({
     $or: [{ email }, { contactPhone }],

@@ -86,6 +86,8 @@ const register = asyncHandler(async (req, res, next) => {
 // Login user
 const login = asyncHandler(async (req, res, next) => {
   const { email, password, mobile } = req.body;
+  email = email?.toLowerCase().trim();
+  mobile = mobile?.trim();
 
   const user = await User.findOne({ $or: [{ mobile }, { email }] }).select(
     "+password"

@@ -21,6 +21,8 @@ const vendorSchema = new Schema(
       type: String,
       required: [true, "Email is required."],
       unique: true,
+      lowercase: true,
+      trim: true,
     },
     contactPhone: {
       type: String,
