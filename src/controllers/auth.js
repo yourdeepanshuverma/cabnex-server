@@ -12,6 +12,7 @@ import { calculateTax, generateOtp, getTotalDays } from "../utils/helper.js";
 import redis from "../utils/redisClient.js";
 import { sendOtpSms } from "../utils/smsService.js";
 import SuccessResponse from "../utils/SuccessResponse.js";
+import sendEmail from "../utils/sendEmail.js";
 
 const cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 30,
@@ -81,6 +82,14 @@ const register = asyncHandler(async (req, res, next) => {
     .status(201)
     .cookie("cabnex_token", generateToken(user._id, "30d"), cookieOptions)
     .json(new SuccessResponse(201, "User registered successfully", userData));
+
+  await sendEmail(
+    user.email,
+    "Welcome to Cabnex!",
+    "<h3>Hi " +
+      user.fullName +
+      ",</h3><p>Thank you for registering with Cabnex. We're excited to have you on board!</p><p>Best regards,<br/>The Cabnex Team</p>"
+  );
 });
 
 // Login user

@@ -10,6 +10,7 @@ import ErrorResponse from "../utils/ErrorResponse.js";
 import generateToken from "../utils/generateToken.js";
 import { generateOtp, vendorMonthlyBookings } from "../utils/helper.js";
 import redis from "../utils/redisClient.js";
+import sendEmail from "../utils/sendEmail.js";
 import { sendOtpSms } from "../utils/smsService.js";
 import SuccessResponse from "../utils/SuccessResponse.js";
 
@@ -89,6 +90,16 @@ const vendorRegister = asyncHandler(async (req, res, next) => {
     .status(201)
     .cookie("cabnex_vendor", generateToken(newVendor._id), cookieOptions)
     .json(new SuccessResponse(201, "Vendor created successfully", newVendor));
+
+  await sendEmail(
+    newVendor.email,
+    "Welcome to Cabnex!",
+    "<>Hi " +
+      newVendor.contactPerson +
+      ",</h3><p>Thank you for registering your company " +
+      newVendor.company +
+      " with Cabnex as a vendor. We're excited to have you on board!</p><p>Best regards,<br/>The Cabnex Team</p>"
+  );
 });
 
 // Login vendor
