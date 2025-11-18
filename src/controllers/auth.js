@@ -484,8 +484,6 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
 
       const days = getTotalDays(pickupDateTime, returnDateTime) || 1;
 
-      console.log(days);
-
       category.baseFare = category.freeKmPerDay * days * category.perKmCharge;
 
       totalAmount += category.baseFare;
