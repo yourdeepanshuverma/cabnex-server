@@ -8,10 +8,10 @@ import User from "../models/User.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ErrorResponse from "../utils/ErrorResponse.js";
 import generateToken from "../utils/generateToken.js";
-import { calculateTax, generateOtp } from "../utils/helper.js";
-import SuccessResponse from "../utils/SuccessResponse.js";
+import { calculateTax, generateOtp, getTotalDays } from "../utils/helper.js";
 import redis from "../utils/redisClient.js";
 import { sendOtpSms } from "../utils/smsService.js";
+import SuccessResponse from "../utils/SuccessResponse.js";
 
 const cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 30,
@@ -482,11 +482,9 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
     const updatedCategories = activeCategories.map((category) => {
       let totalAmount = 0;
 
-      const days =
-        Math.ceil(
-          (new Date(returnDateTime) - new Date(pickupDateTime)) /
-            (1000 * 60 * 60 * 24)
-        ) || 1;
+      const days = getTotalDays(pickupDateTime, returnDateTime) || 1;
+
+      console.log(days);
 
       category.baseFare = category.freeKmPerDay * days * category.perKmCharge;
 
@@ -610,19 +608,19 @@ const travelQuery = asyncHandler(async (req, res, next) => {
 });
 
 export {
-  sendForgotPasswordOtp,
-  verifyForgotPasswordOtp,
-  resetPassword,
-  changePassword,
-  userStats,
   cancelBooking,
+  changePassword,
   deleteUser,
   getBookings,
   getUser,
   login,
   logout,
   register,
+  resetPassword,
   searchCarsForTrip,
+  sendForgotPasswordOtp,
   travelQuery,
   updateDetails,
+  userStats,
+  verifyForgotPasswordOtp,
 };

@@ -185,3 +185,22 @@ export function generateVendorCarChartData(vendors, cars) {
  */
 export const generateOtp = () =>
   Math.floor(1000 + Math.random() * 9000).toString();
+
+/**
+ * Get the difference in days between two dates
+ * @param {*} start
+ * @param {*} end
+ * @returns {number} Difference in days
+ */
+
+export function getTotalDays(start, end) {
+  const s = new Date(start);
+  const e = new Date(end);
+
+  // Convert to UTC midnight to avoid timezone problems
+  const sUTC = Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate());
+  const eUTC = Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate());
+
+  // Inclusive days = diff + 1
+  return (eUTC - sUTC) / (1000 * 60 * 60 * 24) + 1;
+}
