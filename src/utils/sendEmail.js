@@ -14,6 +14,10 @@ async function sendEmail(to, subject, message) {
       host: process.env.NODEMAILER_HOST, // For Gmail. Change for your SMTP.
       port: 587,
       secure: false, // true for 465, false for other ports
+      family: 4, // Use IPv4, skip IPv6
+      envelope: {
+        from: process.env.NODEMAILER_USER,
+      },
     });
 
     // 2. Email content
