@@ -13,11 +13,7 @@ async function sendEmail(to, subject, message) {
     const transporter = nodemailer.createTransport({
       host: process.env.NODEMAILER_HOST, // For Gmail. Change for your SMTP.
       port: 587,
-      secure: false,
-      // auth: {
-      //   user: process.env.NODEMAILER_USER,
-      //   pass: process.env.NODEMAILER_PASS,
-      // },
+      secure: false, // true for 465, false for other ports
     });
 
     // 2. Email content
@@ -35,7 +31,6 @@ async function sendEmail(to, subject, message) {
     // 3. Send email
     const info = await transporter.sendMail(mailOptions);
 
-    console.log("Email sent: ", info.messageId);
     return true;
   } catch (err) {
     console.error("Email sending failed: ", err);
