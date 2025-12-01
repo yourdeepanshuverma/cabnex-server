@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export const getBase64 = (file) =>
   `data:${file?.mimetype};base64,${file?.buffer.toString("base64")}`;
 
@@ -203,4 +205,31 @@ export function getTotalDays(start, end) {
 
   // Inclusive days = diff + 1
   return (eUTC - sUTC) / (1000 * 60 * 60 * 24) + 1;
+}
+
+export async function getCityFromPlaceId(placeId) {
+  const response = await axios.get(
+    "https://maps.googleapis.com/maps/api/place/details/json",
+    {
+      params: {
+        place_id: placeId,
+        key: process.env.GOOGLE_MAPS_API_KEY,
+        fields: "name,place_id,address_component",
+      },
+    }
+  );
+
+  const components = response.data.result?.address_components || [];
+
+  const city = components
+    .find(
+      (comp) =>
+        comp.types.includes("locality") ||
+        comp.types.includes("administrative_area_level_1")
+    )
+    ?.long_name.trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+
+  return city;
 }

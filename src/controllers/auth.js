@@ -8,7 +8,12 @@ import User from "../models/User.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ErrorResponse from "../utils/ErrorResponse.js";
 import generateToken from "../utils/generateToken.js";
-import { calculateTax, generateOtp, getTotalDays } from "../utils/helper.js";
+import {
+  calculateTax,
+  generateOtp,
+  getCityFromPlaceId,
+  getTotalDays,
+} from "../utils/helper.js";
 import redis from "../utils/redisClient.js";
 import { sendOtpSms } from "../utils/smsService.js";
 import SuccessResponse from "../utils/SuccessResponse.js";
@@ -540,7 +545,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
 
     // Sum up distances from origin to all destinations
     // Convert meters to kilometers and round up
-    const [distance, time] = await Promise.all([
+    let [distance, time] = await Promise.all([
       Math.ceil(
         distanceData.routes[0].legs.reduce((acc, elem) => {
           acc += elem.distance.value;
@@ -555,15 +560,54 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
       ),
     ]);
 
+    let allCityCharges = {};
+
+    await Promise.all(
+      destinations.map(async (placeId) => {
+        const cityName = await getCityFromPlaceId(placeId);
+        const city = await City.findOne({
+          isActive: true,
+          city: {
+            $regex: new RegExp(`^${cityName}`, "i"),
+          },
+        }).select("category bufferKm");
+
+        if (!city) return null;
+
+        distance += city?.bufferKm || 0;
+
+        // format output — category wise permitCharge
+        city.category.forEach((cat) => {
+          const id = cat.type.toString();
+
+          if (!allCityCharges[id]) {
+            allCityCharges[id] = {
+              permitCharge: 0,
+              hillCharge: 0,
+            };
+          }
+
+          allCityCharges[id].permitCharge += cat.permitCharge || 0;
+          allCityCharges[id].hillCharge += cat.hillCharge || 0;
+        });
+      })
+    );
+
     const updatedCategories = activeCategories.map((category) => {
+      const id = category.type._id.toString();
       let totalAmount = 0;
+      const totalHillCharge =
+        category.hillCharge + (allCityCharges[id]?.hillCharge || 0);
+      const totalPermitCharge =
+        category.permitCharge + (allCityCharges[id]?.permitCharge || 0);
 
       const days = getTotalDays(pickupDateTime, returnDateTime) || 1;
 
       category.baseFare = category.freeKmPerDay * days * category.perKmCharge;
 
       totalAmount += category.baseFare;
-      totalAmount += category.hillCharge;
+      totalAmount += totalHillCharge;
+      totalAmount += totalPermitCharge;
 
       const totalDriverAllowance = category.driverAllowance * days;
       const totalNightCharge = category.nightCharge * Math.max(days - 1, 0);

@@ -41,6 +41,7 @@ const citySchema = new Schema({
     required: [true, "State is required."],
     unique: false,
   },
+  bufferKm: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
 });
 
