@@ -629,6 +629,8 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         extraKmCharges,
         totalDriverAllowance,
         totalNightCharge,
+        totalHillCharge,
+        totalPermitCharge,
         totalDays: days,
         totalNights: Math.max(days - 1, 0),
         tax,
