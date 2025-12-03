@@ -177,7 +177,7 @@ const vendorLogin = asyncHandler(async (req, res, next) => {
     $or: [{ email }, { contactPhone }],
   }).select("+password");
 
-  if (vendor.isVerified === "pending") {
+  if (vendor?.isVerified === "pending") {
     return next(
       new ErrorResponse(
         403,
@@ -186,7 +186,7 @@ const vendorLogin = asyncHandler(async (req, res, next) => {
     );
   }
 
-  if (vendor.isBlocked) {
+  if (vendor?.isBlocked) {
     return next(
       new ErrorResponse(
         403,
