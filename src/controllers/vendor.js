@@ -177,6 +177,24 @@ const vendorLogin = asyncHandler(async (req, res, next) => {
     $or: [{ email }, { contactPhone }],
   }).select("+password");
 
+  if (vendor.isVerified === "pending") {
+    return next(
+      new ErrorResponse(
+        403,
+        "Your account is still pending verification. please wait for approval or contact support."
+      )
+    );
+  }
+
+  if (vendor.isBlocked) {
+    return next(
+      new ErrorResponse(
+        403,
+        "Your account has been blocked. Please contact support for assistance."
+      )
+    );
+  }
+
   if (!vendor) {
     return next(new ErrorResponse(401, "Invalid email or password"));
   }

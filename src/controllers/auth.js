@@ -561,6 +561,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
     ]);
 
     let allCityCharges = {};
+    let totalHillCharge = 0;
 
     await Promise.all(
       destinations.map(async (placeId) => {
@@ -575,6 +576,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         if (!city) return null;
 
         distance += city?.bufferKm || 0;
+        totalHillCharge += city?.hillCharge || 0;
 
         // format output — category wise permitCharge
         city.category.forEach((cat) => {
@@ -583,12 +585,10 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
           if (!allCityCharges[id]) {
             allCityCharges[id] = {
               permitCharge: 0,
-              hillCharge: 0,
             };
           }
 
           allCityCharges[id].permitCharge += cat.permitCharge || 0;
-          allCityCharges[id].hillCharge += cat.hillCharge || 0;
         });
       })
     );
@@ -596,8 +596,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
     const updatedCategories = activeCategories.map((category) => {
       const id = category.type._id.toString();
       let totalAmount = 0;
-      const totalHillCharge =
-        category.hillCharge + (allCityCharges[id]?.hillCharge || 0);
+
       const totalPermitCharge =
         category.permitCharge + (allCityCharges[id]?.permitCharge || 0);
 

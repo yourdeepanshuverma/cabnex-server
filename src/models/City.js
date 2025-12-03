@@ -25,7 +25,6 @@ const citySchema = new Schema({
       driverAllowance: { type: Number, default: 0 },
       nightCharge: { type: Number, default: 0 },
       permitCharge: { type: Number, default: 0 },
-      hillCharge: { type: Number, default: 0 },
       taxSlab: { type: Number, default: 0 },
       isActive: { type: Boolean, default: true },
     },
@@ -41,6 +40,7 @@ const citySchema = new Schema({
     required: [true, "State is required."],
     unique: false,
   },
+  hillCharge: { type: Number, default: 0 },
   bufferKm: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
 });

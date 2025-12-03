@@ -655,6 +655,22 @@ const addNewCity = asyncHandler(async (req, res, next) => {
   res.status(201).json(new SuccessResponse(201, "City added successfully"));
 });
 
+const updateCityCharges = asyncHandler(async (req, res, next) => {
+  const { cityId } = req.params;
+  const city = await City.findById(cityId);
+  if (!city) {
+    return next(new ErrorResponse(404, "City not found"));
+  }
+  city.bufferKm = req.body.bufferKm || city.bufferKm;
+  city.hillCharge = req.body.hillCharge || city.hillCharge;
+  await city.save();
+  return res
+    .status(200)
+    .json(
+      new SuccessResponse(200, `${city.city} City charges updated successfully`)
+    );
+});
+
 // Add new category to existing city
 const addNewCategoryToCity = asyncHandler(async (req, res, next) => {
   const { cityId } = req.params;
@@ -1212,6 +1228,7 @@ export {
   addNewCity,
   addNewTransfer,
   adminLogin,
+  updateCityCharges,
   adminLogout,
   allBookings,
   allUsers,

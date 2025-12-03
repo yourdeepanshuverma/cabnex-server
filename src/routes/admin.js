@@ -41,6 +41,7 @@ import {
   updateCarCategory,
   updateCategoryFromCity,
   updateCategoryFromTransfer,
+  updateCityCharges,
   updateWebsiteSettingBasics,
   userStats,
   vendorStats,
@@ -88,6 +89,7 @@ router.route("/vendors/:id").get(getVendorDetails).patch(updateAVendor);
 // City management routes
 router.route("/cities-names").get(getCityNames);
 router.route("/cities").get(getCities).post(addNewCity);
+router.route("/cities/:cityId/charges").put(updateCityCharges);
 router.route("/cities/:cityId").put(addNewCategoryToCity);
 router
   .route("/cities/:cityId/category/:categoryId")
