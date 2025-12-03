@@ -979,6 +979,18 @@ const updateAVendor = asyncHandler(async (req, res, next) => {
   res.status(200).json(new SuccessResponse(200, "Vendor updated successfully"));
 });
 
+// Update a User
+const updateAUser = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = await User.findByIdAndUpdate(id, req.body);
+  if (!user) {
+    return next(new ErrorResponse(404, "User not found"));
+  }
+
+  res.status(200).json(new SuccessResponse(200, "User updated successfully"));
+});
+
 // Update a car
 const updateACar = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
@@ -1213,6 +1225,7 @@ const getContactUsFormSubmissions = asyncHandler(async (req, res, next) => {
 });
 
 export {
+  updateAUser,
   getContactUsFormSubmissions,
   contactUsFormSubmission,
   getTravelQueries,

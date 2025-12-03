@@ -174,6 +174,33 @@ const login = asyncHandler(async (req, res, next) => {
     "+password"
   );
 
+  if (user.isVerified === "pending") {
+    return next(
+      new ErrorResponse(
+        403,
+        "Your account verification is still pending. Please wait for approval or contact support."
+      )
+    );
+  }
+
+  if (user.isVerified === "rejected") {
+    return next(
+      new ErrorResponse(
+        403,
+        "Your account verification has been rejected. Please contact support for further assistance."
+      )
+    );
+  }
+
+  if (user.isBlocked) {
+    return next(
+      new ErrorResponse(
+        403,
+        "Your account has been blocked. Please contact support for further assistance."
+      )
+    );
+  }
+
   if (!user) {
     return next(new ErrorResponse(401, "Invalid email or password"));
   }

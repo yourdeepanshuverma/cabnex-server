@@ -37,6 +37,7 @@ import {
   toggleCategoryStatusFromCity,
   toggleCategoryStatusFromTransfer,
   updateACar,
+  updateAUser,
   updateAVendor,
   updateCarCategory,
   updateCategoryFromCity,
@@ -72,7 +73,7 @@ router.get("/dashboard-stats", dashboardStats);
 // User management routes
 router.get("/user-stats", userStats);
 router.get("/users", allUsers);
-router.get("/users/:id", getUserDetails);
+router.route("/users/:id").get(getUserDetails).patch(updateAUser);
 
 // Booking management routes
 router.get("/booking-stats", bookingStats);

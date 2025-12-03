@@ -36,6 +36,15 @@ const userSchema = new Schema(
       type: String,
     },
     bookings: [{ type: Types.ObjectId, ref: "Booking", default: [] }],
+    isVerified: {
+      type: String,
+      enum: ["approved", "pending", "rejected"],
+      default: "pending",
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
     acceptedTerms: { type: Boolean, required: true },
     isActive: { type: Boolean, default: true },
   },
