@@ -645,6 +645,8 @@ const addNewCity = asyncHandler(async (req, res, next) => {
     city: cityName,
     state: state.toLowerCase().split(" ").join("-"),
     place_id: place_id,
+    bufferKm: req.body.bufferKm || 0,
+    hillCharge: req.body.hillCharge || 0,
     category: category || [],
   });
 
@@ -1148,6 +1150,7 @@ const getCityNames = asyncHandler(async (req, res) => {
     .json(new SuccessResponse(200, "Cities fetched successfully", cities));
 });
 
+// Create a new user
 const createUser = asyncHandler(async (req, res, next) => {
   const { email, mobile } = req.body;
   const userExists = await User.findOne({ $or: [{ email }, { mobile }] });
