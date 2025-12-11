@@ -754,6 +754,7 @@ const travelQuery = asyncHandler(async (req, res, next) => {
 });
 
 const withoutPaymentBooking = asyncHandler(async (req, res, next) => {
+  const { serviceType } = req.body;
   let payload = {};
 
   const user = await User.findById(req.user._id);
