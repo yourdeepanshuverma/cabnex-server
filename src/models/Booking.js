@@ -91,6 +91,12 @@ const bookingSchema = new Schema(
       type: Types.ObjectId,
       ref: "Transaction",
     },
+    activities: [
+      {
+        type: Types.ObjectId,
+        ref: "ActivityPackage",
+      },
+    ],
   },
   {
     timestamps: true,
