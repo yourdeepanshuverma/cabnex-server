@@ -6,6 +6,10 @@ const carCategorySchema = new Schema({
     required: [true, "Category is required."],
     unique: true,
   },
+  seats: {
+    type: Number,
+    default: 4,
+  },
   carNames: {
     type: [String],
     default: [],

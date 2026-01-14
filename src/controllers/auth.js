@@ -339,9 +339,10 @@ const deleteUser = asyncHandler(async (req, res, next) => {
 
 // Get user bookings
 const getBookings = asyncHandler(async (req, res) => {
-  const bookings = await Booking.find({ userId: req.user._id }).select(
-    "-assignedVendor"
-  );
+  const bookings = await Booking.find({ userId: req.user._id })
+    .populate("userId", "fullName email mobile")
+    .select("-assignedVendor")
+    .sort({ createdAt: -1 });
 
   res
     .status(200)
