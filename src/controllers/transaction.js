@@ -82,6 +82,8 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
 
     let payload = {};
 
+    const activities = req.body.addons.map((addon) => addon.activityId);
+
     if (serviceType.toLowerCase() === "outstation") {
       payload = {
         userId: req.user._id,
@@ -101,6 +103,7 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
           : req.body.destinations.length > 1
           ? "multi"
           : "round",
+        activities,
       };
     } else if (serviceType.toLowerCase() === "rental") {
       payload = {

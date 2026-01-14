@@ -773,6 +773,8 @@ const withoutPaymentBooking = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(404, "User not found"));
   }
 
+  const activities = req.body.addons.map((addon) => addon.activityId);
+
   if (serviceType.toLowerCase() === "outstation") {
     payload = {
       userId: req.user._id,
@@ -792,6 +794,7 @@ const withoutPaymentBooking = asyncHandler(async (req, res, next) => {
         : req.body.destinations.length > 1
         ? "multi"
         : "round",
+      activities,
     };
   } else if (serviceType.toLowerCase() === "rental") {
     payload = {
