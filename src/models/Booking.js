@@ -57,6 +57,9 @@ const bookingSchema = new Schema(
         address: {
           type: String,
         },
+        dateTime: {
+          type: Date,
+        },
       },
     ],
     returnDateTime: {
@@ -100,7 +103,7 @@ const bookingSchema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 bookingSchema.pre("save", async function (next) {

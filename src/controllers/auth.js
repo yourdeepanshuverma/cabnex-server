@@ -31,10 +31,10 @@ const userStats = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ userId: req.user._id });
   const totalBookings = bookings.length;
   const inProgressBookings = bookings.filter(
-    (booking) => booking.status === "inProgress"
+    (booking) => booking.status === "inProgress",
   ).length;
   const completedBookings = bookings.filter(
-    (booking) => booking.status === "completed"
+    (booking) => booking.status === "completed",
   ).length;
 
   res.status(200).json(
@@ -42,7 +42,7 @@ const userStats = asyncHandler(async (req, res) => {
       totalBookings,
       inProgressBookings,
       completedBookings,
-    })
+    }),
   );
 });
 
@@ -160,7 +160,7 @@ const register = asyncHandler(async (req, res, next) => {
       </td>
     </tr>
   </table>
-    `
+    `,
   );
 });
 
@@ -171,15 +171,15 @@ const login = asyncHandler(async (req, res, next) => {
   mobile = mobile?.trim();
 
   const user = await User.findOne({ $or: [{ mobile }, { email }] }).select(
-    "+password"
+    "+password",
   );
 
   if (user.isVerified === "pending") {
     return next(
       new ErrorResponse(
         403,
-        "Your account verification is still pending. Please wait for approval or contact support."
-      )
+        "Your account verification is still pending. Please wait for approval or contact support.",
+      ),
     );
   }
 
@@ -187,8 +187,8 @@ const login = asyncHandler(async (req, res, next) => {
     return next(
       new ErrorResponse(
         403,
-        "Your account verification has been rejected. Please contact support for further assistance."
-      )
+        "Your account verification has been rejected. Please contact support for further assistance.",
+      ),
     );
   }
 
@@ -196,8 +196,8 @@ const login = asyncHandler(async (req, res, next) => {
     return next(
       new ErrorResponse(
         403,
-        "Your account has been blocked. Please contact support for further assistance."
-      )
+        "Your account has been blocked. Please contact support for further assistance.",
+      ),
     );
   }
 
@@ -263,7 +263,10 @@ const verifyForgotPasswordOtp = asyncHandler(async (req, res, next) => {
   res
     .status(200)
     .json(
-      new SuccessResponse(200, "OTP verified, you may now reset your password.")
+      new SuccessResponse(
+        200,
+        "OTP verified, you may now reset your password.",
+      ),
     );
 });
 
@@ -275,7 +278,7 @@ const resetPassword = asyncHandler(async (req, res, next) => {
 
   if (!verified)
     return next(
-      new ErrorResponse(403, "Session expired. Please reverify OTP.")
+      new ErrorResponse(403, "Session expired. Please reverify OTP."),
     );
 
   const user = await User.findOne({ mobile: phone });
@@ -341,13 +344,18 @@ const deleteUser = asyncHandler(async (req, res, next) => {
 const getBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ userId: req.user._id })
     .populate("userId", "fullName email mobile")
+    .populate("activities", "name price duration")
     .select("-assignedVendor")
     .sort({ createdAt: -1 });
 
   res
     .status(200)
     .json(
-      new SuccessResponse(200, "User bookings retrieved successfully", bookings)
+      new SuccessResponse(
+        200,
+        "User bookings retrieved successfully",
+        bookings,
+      ),
     );
 });
 
@@ -409,7 +417,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         key: process.env.GOOGLE_MAPS_API_KEY,
         fields: "name,place_id,address_component",
       },
-    }
+    },
   );
 
   if (placeDetails.status !== "OK") {
@@ -421,7 +429,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
     .find(
       (comp) =>
         comp.types.includes("locality") ||
-        comp.types.includes("administrative_area_level_1")
+        comp.types.includes("administrative_area_level_1"),
     )
     ?.long_name.trim()
     .toLowerCase()
@@ -439,7 +447,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
                 ?.toLowerCase()
                 .split(" ")
                 .join("-")}`,
-              "i"
+              "i",
             ),
           },
         },
@@ -463,7 +471,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
           destination: `place_id:${destinations[0]}`,
           key: process.env.GOOGLE_MAPS_API_KEY,
         },
-      }
+      },
     );
 
     if (distanceData.status !== "OK") {
@@ -477,17 +485,17 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         distanceData.routes[0].legs.reduce((acc, elem) => {
           acc += elem.distance.value;
           return acc;
-        }, 0) / 1000
+        }, 0) / 1000,
       ),
       Math.ceil(
         distanceData.routes[0].legs.reduce((acc, elem) => {
           acc += elem.duration.value;
           return acc;
-        }, 0) / 60
+        }, 0) / 60,
       ),
     ]);
 
-    const updatedCategories = activeCategories.map((category) => {
+    const updatedCategories = activeCategories?.map((category) => {
       let totalAmount = category.baseFare || 0;
       let extraKmCharges = 0;
 
@@ -515,7 +523,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         distance,
         time,
         categories: updatedCategories,
-      })
+      }),
     );
   }
 
@@ -550,8 +558,8 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
       destinationsParams[destinationsParams.length - 1]
     }`;
     const waypoints = destinationsParams
-      .slice(0, -1)
-      .map((p) => `place_id:${p}`)
+      ?.slice(0, -1)
+      ?.map((p) => `place_id:${p}`)
       .join("|");
 
     // Calculate total distance using Google Distance Matrix API
@@ -564,7 +572,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
           waypoints: waypoints || undefined,
           key: process.env.GOOGLE_MAPS_API_KEY,
         },
-      }
+      },
     );
 
     if (distanceData.status !== "OK") {
@@ -578,13 +586,13 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         distanceData.routes[0].legs.reduce((acc, elem) => {
           acc += elem.distance.value;
           return acc;
-        }, 0) / 1000
+        }, 0) / 1000,
       ),
       Math.ceil(
         distanceData.routes[0].legs.reduce((acc, elem) => {
           acc += elem.duration.value;
           return acc;
-        }, 0) / 60
+        }, 0) / 60,
       ),
     ]);
 
@@ -593,7 +601,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
     let cityActivities = [];
 
     await Promise.all(
-      destinations.map(async (placeId) => {
+      destinations?.map(async (placeId) => {
         const cityName = await getCityFromPlaceId(placeId);
         const city = await City.findOne({
           isActive: true,
@@ -608,10 +616,9 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         totalHillCharge += city?.hillCharge || 0;
         cityActivities = [
           ...new Map(
-            [...cityActivities, ...(city?.activities || [])].map((activity) => [
-              activity._id.toString(),
-              activity,
-            ])
+            [...cityActivities, ...(city?.activities || [])]?.map(
+              (activity) => [activity._id.toString(), activity],
+            ),
           ).values(),
         ];
 
@@ -627,10 +634,10 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
 
           allCityCharges[id].permitCharge += cat.permitCharge || 0;
         });
-      })
+      }),
     );
 
-    const updatedCategories = activeCategories.map((category) => {
+    const updatedCategories = activeCategories?.map((category) => {
       const id = category.type._id.toString();
       let totalAmount = 0;
 
@@ -680,7 +687,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         time,
         categories: updatedCategories,
         cityActivities,
-      })
+      }),
     );
   } else {
     if (serviceType === "rental") {
@@ -688,11 +695,11 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
 
       if (!rental) {
         return next(
-          new ErrorResponse(404, "Selected rental package not found")
+          new ErrorResponse(404, "Selected rental package not found"),
         );
       }
 
-      const updatedCategories = activeCategories.map((category) => {
+      const updatedCategories = activeCategories?.map((category) => {
         const perHourTotal = rental.duration * category.perHourCharge;
         const perKmTotal = rental.kilometer * category.perKmCharge;
 
@@ -716,7 +723,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
           distance: rental.kilometer,
           time: rental.duration * 60,
           categories: updatedCategories,
-        })
+        }),
       );
     }
 
@@ -732,13 +739,13 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
 
       const ActiveActivities = activitiesInCity?.activities
         ?.filter((act) => act.isActive)
-        .map((activity) => ({ ...activity, totalAmount: activity?.price }));
+        ?.map((activity) => ({ ...activity, totalAmount: activity?.price }));
 
       return res.status(200).json(
         new SuccessResponse(200, "Activities retrieved successfully", {
           city: formattedPickupLocation,
           activities: ActiveActivities,
-        })
+        }),
       );
     }
 
@@ -748,7 +755,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         distance: 0,
         time: 0,
         categories: activeCategories,
-      })
+      }),
     );
   }
 });
@@ -773,7 +780,7 @@ const withoutPaymentBooking = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(404, "User not found"));
   }
 
-  const activities = req.body.addons.map((addon) => addon.activityId);
+  const activities = req.body.addons?.map((addon) => addon.activityId);
 
   if (serviceType.toLowerCase() === "outstation") {
     payload = {
@@ -792,8 +799,8 @@ const withoutPaymentBooking = asyncHandler(async (req, res, next) => {
       tripType: req.body.oneWay
         ? "one"
         : req.body.destinations.length > 1
-        ? "multi"
-        : "round",
+          ? "multi"
+          : "round",
       activities,
     };
   } else if (serviceType.toLowerCase() === "rental") {
@@ -921,9 +928,9 @@ const withoutPaymentBooking = asyncHandler(async (req, res, next) => {
                         `<p style="margin:6px 0;">
                       <strong>Destinations:</strong><br/>
                       ${newBooking.destinations
-                        .map(
+                        ?.map(
                           (d) =>
-                            `<span style="display:block; margin:2px 0;">• ${d.address}</span>`
+                            `<span style="display:block; margin:2px 0;">• ${d.address}</span>`,
                         )
                         .join("")}
                     </p>`
@@ -987,7 +994,7 @@ const withoutPaymentBooking = asyncHandler(async (req, res, next) => {
           </tr>
         </table>
     
-      </body>`
+      </body>`,
   );
 });
 
