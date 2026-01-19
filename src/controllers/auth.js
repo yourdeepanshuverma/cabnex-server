@@ -851,9 +851,13 @@ const withoutPaymentBooking = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(500, "Failed to create booking"));
   }
 
-  res
-    .status(200)
-    .json(new SuccessResponse(200, "Booking created successfully", newBooking));
+  const bookingObj = newBooking.toObject();
+
+  res.status(200).json(
+    new SuccessResponse(200, "Booking created successfully", {
+      booking: { ...bookingObj, paymentStatus: "pending" },
+    }),
+  );
 
   await sendEmail(
     user.email,

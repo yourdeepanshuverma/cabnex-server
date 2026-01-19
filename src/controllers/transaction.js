@@ -16,8 +16,8 @@ const getRazorpayKey = asyncHandler(async (req, res) => {
       new SuccessResponse(
         200,
         "Razorpay Key fetched",
-        process.env.RAZORPAY_KEY_ID
-      )
+        process.env.RAZORPAY_KEY_ID,
+      ),
     );
 });
 
@@ -75,14 +75,14 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
           username: process.env.RAZORPAY_KEY_ID,
           password: process.env.RAZORPAY_KEY_SECRET,
         },
-      }
+      },
     );
 
     const p = paymentData.data;
 
     let payload = {};
 
-    const activities = req.body.addons.map((addon) => addon.activityId);
+    const activities = req.body.addons?.map((addon) => addon.activityId);
 
     if (serviceType.toLowerCase() === "outstation") {
       payload = {
@@ -101,8 +101,8 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
         tripType: req.body.oneWay
           ? "one"
           : req.body.destinations.length > 1
-          ? "multi"
-          : "round",
+            ? "multi"
+            : "round",
         activities,
       };
     } else if (serviceType.toLowerCase() === "rental") {
@@ -177,10 +177,12 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
     await user.save();
     await newBooking.save();
 
+    const bookingObj = newBooking.toObject();
+
     res.status(200).json(
       new SuccessResponse(200, "Payment verified successfully", {
-        booking: newBooking,
-      })
+        booking: { ...bookingObj, paymentStatus: p.status },
+      }),
     );
 
     await sendEmail(
@@ -243,9 +245,9 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
                   <p style="margin:6px 0;"><strong>Date &amp; Time:</strong> ${
                     newBooking?.pickupDateTime?.toISOString().split("T")[0]
                   } at ${newBooking?.pickupDateTime
-        ?.toISOString()
-        .split("T")[1]
-        .slice(0, 5)}</p>
+                    ?.toISOString()
+                    .split("T")[1]
+                    .slice(0, 5)}</p>
                   ${
                     serviceType === "Transfer" &&
                     `<p style="margin:6px 0;"><strong>Drop Location:</strong> ${newBooking.dropAddress[0].address}</p>`
@@ -257,7 +259,7 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
                   ${newBooking.destinations
                     .map(
                       (d) =>
-                        `<span style="display:block; margin:2px 0;">• ${d.address}</span>`
+                        `<span style="display:block; margin:2px 0;">• ${d.address}</span>`,
                     )
                     .join("")}
                 </p>`
@@ -320,7 +322,7 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
       </tr>
     </table>
 
-  </body>`
+  </body>`,
     );
   } catch (err) {
     console.error(err);
