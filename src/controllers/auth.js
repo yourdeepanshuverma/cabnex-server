@@ -454,11 +454,12 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
       ],
     }).populate("category.type", "-carNames");
 
-    if (!transfer) {
-      transfer = await Transfer.findOne({
-        name: "default",
-      }).populate("category.type", "-carNames");
-    }
+    // Fallback to default transfer if specific one not found
+    // if (!transfer) {
+    //   transfer = await Transfer.findOne({
+    //     name: "default",
+    //   }).populate("category.type", "-carNames");
+    // }
 
     const activeCategories =
       transfer?.category?.filter((cat) => cat.isActive) || [];
@@ -538,12 +539,12 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
     .select("-activities");
 
   // Fallback to default city
-  if (!categoriesInCity) {
-    categoriesInCity = await City.findOne({
-      isActive: true,
-      city: "default",
-    }).populate("category.type", "-carNames");
-  }
+  // if (!categoriesInCity) {
+  //   categoriesInCity = await City.findOne({
+  //     isActive: true,
+  //     city: "default",
+  //   }).populate("category.type", "-carNames");
+  // }
 
   const activeCategories =
     categoriesInCity?.category?.filter((cat) => cat.isActive) || [];

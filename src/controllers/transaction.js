@@ -23,13 +23,21 @@ const getRazorpayKey = asyncHandler(async (req, res) => {
 
 const createRazorpayOrder = asyncHandler(async (req, res, next) => {
   try {
+    const price = Number(req.body.price);
+
+    if (!price || price <= 0) {
+      return next(new ErrorResponse(400, "Invalid price amount"));
+    }
+
+    const amountInPaise = Number((price * 100).toFixed(0));
+
     const instance = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
     const options = {
-      amount: req.body.price * 100, // amount in paise
+      amount: amountInPaise, // amount in paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
