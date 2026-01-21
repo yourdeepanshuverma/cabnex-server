@@ -83,6 +83,7 @@ const register = asyncHandler(async (req, res, next) => {
     email: user.email,
     mobile: user.mobile,
     acceptedTerms: user.acceptedTerms,
+    isVerified: user.isVerified,
     isActive: user.isActive,
     createdAt: user.createdAt,
   };
@@ -219,6 +220,7 @@ const login = asyncHandler(async (req, res, next) => {
     email: user.email,
     mobile: user.mobile,
     acceptedTerms: user.acceptedTerms,
+    isVerified: user.isVerified,
     isActive: user.isActive,
     createdAt: user.createdAt,
   };
