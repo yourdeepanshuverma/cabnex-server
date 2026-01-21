@@ -19,6 +19,33 @@ const getAuthCookies = asyncHandler(async (req, _, next) => {
     return next(new ErrorResponse(401, "Not authorized"));
   }
 
+  if (user.isVerified === "pending") {
+    return next(
+      new ErrorResponse(
+        403,
+        "Your account is still pending verification. Please wait for approval.",
+      ),
+    );
+  }
+
+  if (user.isVerified === "rejected") {
+    return next(
+      new ErrorResponse(
+        403,
+        "Your account has been rejected. Please contact support.",
+      ),
+    );
+  }
+
+  if (user.isBlocked) {
+    return next(
+      new ErrorResponse(
+        403,
+        "Your account has been blocked. Please contact support.",
+      ),
+    );
+  }
+
   req.user = user;
 
   next();
@@ -43,8 +70,8 @@ const getVendorCookies = asyncHandler(async (req, _, next) => {
     return next(
       new ErrorResponse(
         403,
-        "Your account has been blocked. Please contact support."
-      )
+        "Your account has been blocked. Please contact support.",
+      ),
     );
   }
 
