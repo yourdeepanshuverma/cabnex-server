@@ -4,7 +4,7 @@ const citySchema = new Schema({
   city: { type: String, required: [true, "City is required."], unique: true },
   place_id: {
     type: String,
-    required: [true, "Place ID is required."],
+    trim: true,
     unique: true,
   },
   category: [
@@ -37,7 +37,6 @@ const citySchema = new Schema({
   ],
   state: {
     type: String,
-    required: [true, "State is required."],
     unique: false,
   },
   hillCharge: { type: Number, default: 0 },

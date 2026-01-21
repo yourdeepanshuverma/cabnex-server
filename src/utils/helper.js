@@ -37,7 +37,7 @@ export const vendorMonthlyBookings = (bookings, monthsToShow = 6) => {
 
   // Filter current year's bookings (optional, remove if you want to cross years)
   const filtered = bookings.filter(
-    (b) => new Date(b.createdAt).getFullYear() === currentYear
+    (b) => new Date(b.createdAt).getFullYear() === currentYear,
   );
 
   // Group by month
@@ -216,7 +216,7 @@ export async function getCityFromPlaceId(placeId) {
         key: process.env.GOOGLE_MAPS_API_KEY,
         fields: "name,place_id,address_component",
       },
-    }
+    },
   );
 
   const components = response.data.result?.address_components || [];
@@ -225,7 +225,7 @@ export async function getCityFromPlaceId(placeId) {
     .find(
       (comp) =>
         comp.types.includes("locality") ||
-        comp.types.includes("administrative_area_level_1")
+        comp.types.includes("administrative_area_level_1"),
     )
     ?.long_name.trim()
     .toLowerCase()
@@ -233,3 +233,144 @@ export async function getCityFromPlaceId(placeId) {
 
   return city;
 }
+
+export const renderItinerary = (destinations = []) => {
+  if (!destinations.length) return "";
+
+  return `
+    <div style="margin-top:16px;">
+      <h3 style="margin:0 0 8px; font-size:15px; color:#0f172a;">
+        Day-wise Itinerary
+      </h3>
+
+      <table width="100%" cellpadding="6" cellspacing="0"
+        style="border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:#e2e8f0;">
+            <th align="left" style="border:1px solid #cbd5e1;">Day</th>
+            <th align="left" style="border:1px solid #cbd5e1;">Destination</th>
+            <th align="left" style="border:1px solid #cbd5e1;">Date</th>
+            <th align="left" style="border:1px solid #cbd5e1;">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${destinations
+            .map((d, index) => {
+              const dt = d.dateTime ? new Date(d.dateTime) : null;
+
+              return `
+                <tr>
+                  <td style="border:1px solid #cbd5e1;">Stop ${index + 1}</td>
+                  <td style="border:1px solid #cbd5e1;">${d.address}</td>
+                  <td style="border:1px solid #cbd5e1;">
+                    ${dt ? dt.toISOString().split("T")[0] : "-"}
+                  </td>
+                  <td style="border:1px solid #cbd5e1;">
+                    ${dt ? dt.toISOString().split("T")[1].slice(0, 5) : "-"}
+                  </td>
+                </tr>
+              `;
+            })
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+};
+
+export const renderRentalInfo = (booking) => {
+  const pkg = booking.packageId;
+
+  // safety checks
+  if (
+    booking.packageType !== "RentalPackage" ||
+    !pkg ||
+    typeof pkg !== "object"
+  ) {
+    return "";
+  }
+
+  return `
+    <div style="margin-top:16px;">
+      <h3 style="margin:0 0 8px; font-size:15px; color:#0f172a;">
+        Rental Package Details
+      </h3>
+
+      <table width="100%" cellpadding="6" cellspacing="0"
+        style="border-collapse:collapse; font-size:13px;">
+        <tbody>
+          <tr>
+            <td style="border:1px solid #cbd5e1;"><strong>Included Distance</strong></td>
+            <td style="border:1px solid #cbd5e1;">
+              ${pkg.kilometer ?? "-"} km
+            </td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #cbd5e1;"><strong>Duration</strong></td>
+            <td style="border:1px solid #cbd5e1;">
+              ${pkg.duration ?? "-"} hours
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+};
+
+export const renderActivityInfo = (booking) => {
+  const pkg = booking.packageId;
+
+  // safety checks
+  if (
+    booking.packageType !== "ActivityPackage" ||
+    !pkg ||
+    typeof pkg !== "object"
+  ) {
+    return "";
+  }
+
+  return `
+    <div style="margin-top:16px;">
+      <h3 style="margin:0 0 8px; font-size:15px; color:#0f172a;">
+        Activity Details
+      </h3>
+
+      <table width="100%" cellpadding="6" cellspacing="0"
+        style="border-collapse:collapse; font-size:13px;">
+        <tbody>
+          <tr>
+            <td style="border:1px solid #cbd5e1;"><strong>Activity</strong></td>
+            <td style="border:1px solid #cbd5e1;">
+              ${pkg.title ?? "-"}
+            </td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #cbd5e1;"><strong>Description</strong></td>
+            <td style="border:1px solid #cbd5e1;">
+              ${pkg.description ?? "-"}
+            </td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #cbd5e1;"><strong>Duration</strong></td>
+            <td style="border:1px solid #cbd5e1;">
+              ${pkg.duration ? `${pkg.duration} hours` : "-"}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+};
+
+export const renderAddons = (activities = []) => {
+  if (!activities.length) return "";
+
+  return `
+    <h3>Selected Add-ons</h3>
+    <ul>
+      ${activities
+        .map((a) => `<li>${a.name} – ₹${a.price} (${a.duration})</li>`)
+        .join("")}
+    </ul>
+  `;
+};
