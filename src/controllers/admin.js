@@ -38,7 +38,7 @@ const getWebsiteSetting = asyncHandler(async (req, res, next) => {
   res.status(200).json(
     new SuccessResponse(200, "Website setting fetched successfully", {
       setting,
-    })
+    }),
   );
 });
 
@@ -236,7 +236,7 @@ const dashboardStats = asyncHandler(async (_, res, next) => {
   const pendingBookings = bookings.filter((b) => b.status === "pending");
 
   const upcomingBookings = bookings.filter(
-    (b) => new Date(b.pickupDateTime) > now && b.status === "inProgress"
+    (b) => new Date(b.pickupDateTime) > now && b.status === "inProgress",
   );
 
   const completedBookings = bookings.filter((b) => b.status === "completed");
@@ -259,7 +259,8 @@ const dashboardStats = asyncHandler(async (_, res, next) => {
       serviceType: b.serviceType || "N/A",
       totalDays: b.returnDateTime
         ? Math.ceil(
-            (new Date(b.returnDateTime) - new Date(b.pickupDateTime)) / 86400000
+            (new Date(b.returnDateTime) - new Date(b.pickupDateTime)) /
+              86400000,
           )
         : 0,
       totalAmount: b.totalAmount,
@@ -311,7 +312,7 @@ const dashboardStats = asyncHandler(async (_, res, next) => {
       },
       inProgressTable,
       pendingBookingsTable,
-    })
+    }),
   );
 });
 
@@ -322,7 +323,7 @@ const userStats = asyncHandler(async (_, res) => {
       User.countDocuments(),
       User.countDocuments({ bookings: { $exists: true, $ne: [] } }),
       User.countDocuments({ bookings: { $exists: true, $eq: [] } }),
-    ]
+    ],
   );
 
   res.status(200).json(
@@ -330,7 +331,7 @@ const userStats = asyncHandler(async (_, res) => {
       { title: "Total Users", stats: totalUsers },
       { title: "User with Bookings", stats: userWithBookings },
       { title: "User without Bookings", stats: userWithoutBookings },
-    ])
+    ]),
   );
 });
 
@@ -349,9 +350,9 @@ const allUsers = asyncHandler(async (req, res) => {
               { mobile: { $regex: search, $options: "i" } },
             ],
           }
-        : {}
+        : {},
     )
-      .select("fullName email mobile createdAt")
+      .select("fullName email mobile isVerified createdAt")
       .sort({
         createdAt: -1,
       })
@@ -368,7 +369,7 @@ const allUsers = asyncHandler(async (req, res) => {
       totalPages,
       currentPage: Number(page),
       data: users,
-    })
+    }),
   );
 });
 
@@ -377,7 +378,7 @@ const getUserDetails = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const user = await User.findById(id).populate(
     "bookings",
-    "bookingId serviceType pickupDateTime totalAmount recievedAmount status assignedVendor createdAt"
+    "bookingId serviceType pickupDateTime totalAmount recievedAmount status assignedVendor createdAt",
   );
   if (!user) {
     return next(new ErrorResponse(404, "User not found"));
@@ -395,11 +396,11 @@ const bookingStats = asyncHandler(async (_, res) => {
     (b) =>
       (b.status === "inProgress" ||
         new Date(b.returnDateTime) >= new Date(b.pickupDateTime)) &&
-      b.assignedVendor != null
+      b.assignedVendor != null,
   ).length;
   const pendingBookings = bookings.filter((b) => b.status === "pending").length;
   const cancelledBookings = bookings.filter(
-    (b) => b.status === "cancelled"
+    (b) => b.status === "cancelled",
   ).length;
 
   res.status(200).json(
@@ -420,7 +421,7 @@ const bookingStats = asyncHandler(async (_, res) => {
         title: "Cancelled Bookings",
         stats: cancelledBookings,
       },
-    ])
+    ]),
   );
 });
 
@@ -463,7 +464,7 @@ const allBookings = asyncHandler(async (req, res) => {
       totalPages,
       currentPage: Number(page),
       data: bookings,
-    })
+    }),
   );
 });
 
@@ -535,7 +536,7 @@ const vendorStats = asyncHandler(async (_, res) => {
       { title: "Total Approved", stats: approved },
       { title: "Total Pending", stats: pending },
       { title: "Total Blocked", stats: isBlocked },
-    ])
+    ]),
   );
 });
 
@@ -564,11 +565,11 @@ const allVendors = asyncHandler(async (req, res) => {
   const [vendors, totalCount] = await Promise.all([
     Vendor.find({ ...filter })
       .select(
-        "company companyType contactPerson email contactPhone isVerified isBlocked createdAt"
+        "company companyType contactPerson email contactPhone isVerified isBlocked createdAt",
       )
       .populate(
         "cars",
-        "make model registrationNumber fuelType isVerified status"
+        "make model registrationNumber fuelType isVerified status",
       )
       .sort({
         createdAt: -1,
@@ -587,7 +588,7 @@ const allVendors = asyncHandler(async (req, res) => {
       totalPages,
       currentPage: Number(page),
       data: vendors,
-    })
+    }),
   );
 });
 
@@ -597,11 +598,11 @@ const getVendorDetails = asyncHandler(async (req, res, next) => {
   const vendor = await Vendor.findById(id)
     .populate(
       "cars",
-      "make model registrationNumber fuelType status isVerified "
+      "make model registrationNumber fuelType status isVerified ",
     )
     .populate(
       "bookings",
-      "bookingId serviceType pickupDateTime totalAmount recievedAmount status assignedVendor createdAt"
+      "bookingId serviceType pickupDateTime totalAmount recievedAmount status assignedVendor createdAt",
     );
 
   if (!vendor) {
@@ -611,7 +612,7 @@ const getVendorDetails = asyncHandler(async (req, res, next) => {
   res.status(200).json(
     new SuccessResponse(200, "Vendor fetched successfully", {
       vendor,
-    })
+    }),
   );
 });
 
@@ -669,7 +670,10 @@ const updateCityCharges = asyncHandler(async (req, res, next) => {
   return res
     .status(200)
     .json(
-      new SuccessResponse(200, `${city.city} City charges updated successfully`)
+      new SuccessResponse(
+        200,
+        `${city.city} City charges updated successfully`,
+      ),
     );
 });
 
@@ -685,12 +689,12 @@ const addNewCategoryToCity = asyncHandler(async (req, res, next) => {
   }
 
   const categoryExists = city.category.find(
-    (cat) => cat.type.toString() === categoryData.type
+    (cat) => cat.type.toString() === categoryData.type,
   );
 
   if (categoryExists) {
     return next(
-      new ErrorResponse(400, "Category with same type already exists")
+      new ErrorResponse(400, "Category with same type already exists"),
     );
   }
 
@@ -713,7 +717,7 @@ const updateCategoryFromCity = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(404, "City not found"));
   }
   const categoryIndex = city.category.findIndex(
-    (cat) => cat._id.toString() === categoryId
+    (cat) => cat._id.toString() === categoryId,
   );
   if (categoryIndex === -1) {
     return next(new ErrorResponse(404, "Category not found in city"));
@@ -736,7 +740,7 @@ const toggleCategoryStatusFromCity = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(404, "City not found"));
   }
   const categoryIndex = city.category.findIndex(
-    (cat) => cat._id.toString() === categoryId
+    (cat) => cat._id.toString() === categoryId,
   );
 
   if (categoryIndex === -1) {
@@ -766,7 +770,7 @@ const getAllCarCategories = asyncHandler(async (_, res) => {
     new SuccessResponse(200, "Car categories fetched successfully", {
       totalCount,
       categories,
-    })
+    }),
   );
 });
 
@@ -811,7 +815,11 @@ const addCarCategory = asyncHandler(async (req, res, next) => {
   res
     .status(201)
     .json(
-      new SuccessResponse(201, "Car category added successfully", addedCategory)
+      new SuccessResponse(
+        201,
+        "Car category added successfully",
+        addedCategory,
+      ),
     );
 });
 
@@ -846,13 +854,13 @@ const updateCarCategory = asyncHandler(async (req, res, next) => {
   const updatedCategory = await CarCategory.findOneAndUpdate(
     { _id: id },
     req.body,
-    { new: true }
+    { new: true },
   );
 
   res.status(200).json(
     new SuccessResponse(200, "Car category updated successfully", {
       updatedCategory,
-    })
+    }),
   );
 });
 
@@ -898,7 +906,7 @@ const carStats = asyncHandler(async (req, res, next) => {
   const cars = await Car.find();
   const totalCars = cars.length;
   const approvedCars = cars.filter(
-    (car) => car.isVerified === "approved"
+    (car) => car.isVerified === "approved",
   ).length;
   const pendingCars = cars.filter((car) => car.isVerified === "pending").length;
 
@@ -907,7 +915,7 @@ const carStats = asyncHandler(async (req, res, next) => {
       { title: "Total Cars", stats: totalCars },
       { title: "Pending Cars", stats: pendingCars },
       { title: "Approved Cars", stats: approvedCars },
-    ])
+    ]),
   );
 });
 
@@ -926,10 +934,10 @@ const getAllCars = asyncHandler(async (req, res, next) => {
               { registrationNumber: { $regex: search, $options: "i" } },
             ],
           }
-        : {}
+        : {},
     )
       .select(
-        "make model vendor registrationNumber fuelType year status isVerified createdAt"
+        "make model vendor registrationNumber fuelType year status isVerified createdAt",
       )
       .populate("vendor", "company isVerified")
       .sort({
@@ -948,7 +956,7 @@ const getAllCars = asyncHandler(async (req, res, next) => {
       totalPages,
       currentPage: Number(page),
       data: cars,
-    })
+    }),
   );
 });
 
@@ -957,7 +965,7 @@ const getCarDetails = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const car = await Car.findById(id).populate(
     "vendor",
-    "company contactPerson email contactPhone companyType isVerified"
+    "company contactPerson email contactPhone companyType isVerified",
   );
 
   if (!car) {
@@ -1020,7 +1028,7 @@ const addNewTransfer = asyncHandler(async (req, res, next) => {
 
   if (transferExists) {
     return next(
-      new ErrorResponse(400, "Place with same name or place ID already exists")
+      new ErrorResponse(400, "Place with same name or place ID already exists"),
     );
   }
 
@@ -1051,7 +1059,7 @@ const getAllTransfers = asyncHandler(async (req, res, next) => {
   res
     .status(200)
     .json(
-      new SuccessResponse(200, "Transfers fetched successfully", transfers)
+      new SuccessResponse(200, "Transfers fetched successfully", transfers),
     );
 });
 
@@ -1067,12 +1075,12 @@ const addNewCategoryToTransfer = asyncHandler(async (req, res, next) => {
   }
 
   const categoryExists = transfer.category.find(
-    (cat) => cat.type.toString() === categoryData.type
+    (cat) => cat.type.toString() === categoryData.type,
   );
 
   if (categoryExists) {
     return next(
-      new ErrorResponse(400, "Category with same type already exists")
+      new ErrorResponse(400, "Category with same type already exists"),
     );
   }
 
@@ -1095,7 +1103,7 @@ const updateCategoryFromTransfer = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(404, "Transfer not found"));
   }
   const categoryIndex = transfer.category.findIndex(
-    (cat) => cat._id.toString() === categoryId
+    (cat) => cat._id.toString() === categoryId,
   );
   if (categoryIndex === -1) {
     return next(new ErrorResponse(404, "Category not found in transfer"));
@@ -1108,7 +1116,7 @@ const updateCategoryFromTransfer = asyncHandler(async (req, res, next) => {
   res
     .status(200)
     .json(
-      new SuccessResponse(200, "Category updated successfully in transfer")
+      new SuccessResponse(200, "Category updated successfully in transfer"),
     );
 });
 
@@ -1121,7 +1129,7 @@ const toggleCategoryStatusFromTransfer = asyncHandler(
       return next(new ErrorResponse(404, "Transfer not found"));
     }
     const categoryIndex = transfer.category.findIndex(
-      (cat) => cat._id.toString() === categoryId
+      (cat) => cat._id.toString() === categoryId,
     );
 
     if (categoryIndex === -1) {
@@ -1136,7 +1144,7 @@ const toggleCategoryStatusFromTransfer = asyncHandler(
     res
       .status(200)
       .json(new SuccessResponse(200, "Category status toggled successfully"));
-  }
+  },
 );
 
 // Get all cities
@@ -1201,7 +1209,7 @@ const getTravelQueries = asyncHandler(async (req, res, next) => {
   res
     .status(200)
     .json(
-      new SuccessResponse(200, "Travel queries fetched successfully", queries)
+      new SuccessResponse(200, "Travel queries fetched successfully", queries),
     );
 });
 
@@ -1222,8 +1230,8 @@ const getContactUsFormSubmissions = asyncHandler(async (req, res, next) => {
       new SuccessResponse(
         200,
         "Contact us form submissions fetched successfully",
-        submissions
-      )
+        submissions,
+      ),
     );
 });
 
