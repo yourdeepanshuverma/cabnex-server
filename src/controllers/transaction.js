@@ -194,7 +194,7 @@ const verifyRazorpayPayment = asyncHandler(async (req, res, next) => {
 
     const populatedBooking = await Booking.findById(newBooking._id)
       .select("activities packageId packageType")
-      .populate("activities", "name price duration -_id")
+      .populate("activities", "title price duration -_id")
       .populate("packageId", "kilometer duration title description")
       .lean();
 
