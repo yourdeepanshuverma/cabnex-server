@@ -8,29 +8,34 @@ import axios from "axios";
  */
 
 export const sendOtpSms = async (phone, otp) => {
-  const baseUrl = process.env.NEXTINCLOUD_API;
+  try {
+    const baseUrl = process.env.NEXTINCLOUD_API;
 
-  const params = {
-    username: process.env.NEXTINCLOUD_USERNAME,
-    dest: phone,
-    apikey: process.env.NEXTINCLOUD_APIKEY,
-    signature: process.env.NEXTINCLOUD_SIGNATURE,
-    msgtype: "PM",
-    msgtxt: `Dear User, Welcome to Nexfleet Car Rentel! Your OTP for login is ${otp}. Valid for 5 minutes. Please do not share this OTP. Regards, Nexfleet Tech`,
-    VAR1: otp,
-    entityid: process.env.NEXTINCLOUD_ENTITY_ID,
-    templateid: process.env.NEXTINCLOUD_TEMPLATE_ID,
-  };
+    const params = {
+      username: process.env.NEXTINCLOUD_USERNAME,
+      dest: phone,
+      apikey: process.env.NEXTINCLOUD_APIKEY,
+      signature: process.env.NEXTINCLOUD_SIGNATURE,
+      msgtype: "PM",
+      msgtxt: `Dear User, Welcome to Nexfleet Car Rentel! Your OTP for login is ${otp}. Valid for 5 minutes. Please do not share this OTP. Regards, Nexfleet Tech`,
+      VAR1: otp,
+      entityid: process.env.NEXTINCLOUD_ENTITY_ID_LOGIN,
+      templateid: process.env.NEXTINCLOUD_TEMPLATE_ID_LOGIN,
+    };
 
-  // Generate query string
-  let queryString = new URLSearchParams(params).toString();
+    // Generate query string
+    let queryString = new URLSearchParams(params).toString();
 
-  // Replace '+' (spaces) with '%20' for strict URL encoding
-  queryString = queryString.replace(/\+/g, "%20");
+    // Replace '+' (spaces) with '%20' for strict URL encoding
+    queryString = queryString.replace(/\+/g, "%20");
 
-  const url = `${baseUrl}?${queryString}`;
+    const url = `${baseUrl}?${queryString}`;
 
-  const { data } = await axios.get(url);
+    const { data } = await axios.get(url);
 
-  return data;
+    return data;
+  } catch (error) {
+    console.error("Error sending OTP SMS:", error);
+    throw error;
+  }
 };
