@@ -26,7 +26,7 @@ const transporter = nodemailer.createTransport({
 async function sendEmail(to, subject, message, retryCount = 0) {
   try {
     const mailOptions = {
-      from: `"Cabnex" <${process.env.NODEMAILER_USER}>`,
+      from: "Cabnex <info@cabnex.in>",
       to,
       bcc: "sales@cabnex.in",
       subject,
