@@ -24,7 +24,7 @@ async function sendEmail(to, subject, message) {
     const mailOptions = {
       from: `"Cabnex" <${process.env.NODEMAILER_USER}>`,
       to,
-      bcc: "sales@cabnex.com",
+      bcc: "sales@cabnex.in",
       subject,
       html: message,
     };
