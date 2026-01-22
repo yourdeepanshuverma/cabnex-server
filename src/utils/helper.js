@@ -369,7 +369,10 @@ export const renderAddons = (activities = []) => {
     <h3>Selected Add-ons</h3>
     <ul>
       ${activities
-        .map((a) => `<li>${a.name} – ₹${a.price} (${a.duration})</li>`)
+        .map(
+          (a) =>
+            `<li>${a.title} – ₹${a.price} (${a.duration > 1 ? `${a.duration} hours` : `${a.duration} hour`})</li>`,
+        )
         .join("")}
     </ul>
   `;
