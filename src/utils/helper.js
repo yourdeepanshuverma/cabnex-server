@@ -247,7 +247,7 @@ export const renderItinerary = (destinations = []) => {
         style="border-collapse:collapse; font-size:13px;">
         <thead>
           <tr style="background:#e2e8f0;">
-            <th align="left" style="border:1px solid #cbd5e1;">Day</th>
+            <th align="left" style="border:1px solid #cbd5e1;">Stops</th>
             <th align="left" style="border:1px solid #cbd5e1;">Destination</th>
             <th align="left" style="border:1px solid #cbd5e1;">Date</th>
             <th align="left" style="border:1px solid #cbd5e1;">Time</th>

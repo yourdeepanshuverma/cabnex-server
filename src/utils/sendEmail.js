@@ -1,5 +1,21 @@
 import nodemailer from "nodemailer";
 
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+const transporter = nodemailer.createTransport({
+  host: process.env.NODEMAILER_HOST,
+  port: Number(process.env.NODEMAILER_PORT),
+  secure: false,
+  auth: {
+    user: process.env.NODEMAILER_USER,
+    pass: process.env.NODEMAILER_PASS,
+  },
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+  family: 4,
+});
+
 /**
  * Sends an email using nodemailer.
  * @param {string} to - recipient email address
@@ -7,20 +23,8 @@ import nodemailer from "nodemailer";
  * @param {string} message - email HTML content
  */
 
-async function sendEmail(to, subject, message) {
+async function sendEmail(to, subject, message, retryCount = 0) {
   try {
-    // 1. Create transporter (SMTP connection)
-    const transporter = nodemailer.createTransport({
-      host: process.env.NODEMAILER_HOST, // For Gmail. Change for your SMTP.
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      family: 4, // Use IPv4, skip IPv6
-      envelope: {
-        from: process.env.NODEMAILER_USER,
-      },
-    });
-
-    // 2. Email content
     const mailOptions = {
       from: `"Cabnex" <${process.env.NODEMAILER_USER}>`,
       to,
@@ -29,12 +33,19 @@ async function sendEmail(to, subject, message) {
       html: message,
     };
 
-    // 3. Send email
-    const info = await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
 
     return true;
   } catch (err) {
-    console.error("Email sending failed: ", err);
+    console.error("Email sending failed:", err.code, err.responseCode);
+
+    // Retry ONLY for Gmail temporary errors
+    if (err.responseCode === 421 && retryCount < 3) {
+      console.log(`Retrying email in 30s... (${retryCount + 1}/3)`);
+      await delay(30000);
+      return sendEmail(to, subject, message, retryCount + 1);
+    }
+
     return false;
   }
 }
