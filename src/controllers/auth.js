@@ -96,76 +96,120 @@ const register = asyncHandler(async (req, res, next) => {
   await sendEmail(
     user.email,
     "Welcome to Cabnex!",
-    `
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-    <tr>
-      <td align="center" style="padding:28px 16px;">
-        <table role="presentation" class="container" cellpadding="0" cellspacing="0">
-          <tr>
-            <td class="card">
-              <!-- Logo -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="text-align:left;">
-                    <img src="https://res.cloudinary.com/dxmxn1uyb/image/upload/v1762762553/cabnex/61b6a9e1-45ff-40cd-98cc-3dae304e85db.png" alt="Cabnex" width="140" style="display:block;">
-                  </td>
-                  <td style="text-align:right; vertical-align:middle;">
-                    <a href="https://www.cabnex.in" target="_blank" style="font-size:12px; color:#94a3b8;">www.cabnex.in</a>
-                  </td>
-                </tr>
-              </table>
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td align="center" style="padding:28px 16px;">
+      <table role="presentation" class="container" cellpadding="0" cellspacing="0">
+        <tr>
+          <td class="card">
 
-              <!-- Intro -->
-              <hr style="border:none; border-top:1px solid #eef2f7; margin:18px 0 20px;">
-              <h1>Dear Travel Partner,</h1>
+            <!-- Logo -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="text-align:left;">
+                  <img src="https://res.cloudinary.com/dxmxn1uyb/image/upload/v1762762553/cabnex/61b6a9e1-45ff-40cd-98cc-3dae304e85db.png"
+                    alt="Cabnex" width="140" style="display:block;">
+                </td>
+                <td style="text-align:right; vertical-align:middle;">
+                  <a href="https://www.cabnex.in" target="_blank"
+                    style="font-size:12px; color:#94a3b8;">www.cabnex.in</a>
+                </td>
+              </tr>
+            </table>
 
-              <p>
-                We are pleased to confirm your successful registration as a valued partner with <strong>www.cabnex.in</strong>.
-                Your profile is now active. You can access exclusive business offers, collaborate on tailored travel solutions, and stay updated on the latest deals.
-              </p>
+            <hr style="border:none; border-top:1px solid #eef2f7; margin:18px 0 20px;">
 
-              <p class="meta">
-                Our onboarding team will contact you soon to provide assistance and a product demo. In the meantime, if you have any questions or require help, please contact our partnership support team.
-              </p>
+            <h1>Dear ${user.fullName || "Travel Partner"},</h1>
 
-              <!-- CTA & contact -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;">
-                <tr>
-                  <td style="padding-top:8px;">
-                    <a href="https://www.cabnex.in" target="_blank" 
-                    style="background-color:#0ea5a4; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:6px; display:inline-block; font-weight:bold;"
-                    >Visit Cabnex</a>
-                  </td>
-                </tr>
-              </table>
+            <p>
+              We are pleased to confirm your successful registration as a valued partner with
+              <strong>www.cabnex.in</strong>.
+              Your profile is now active.
+            </p>
 
-              <p style="margin-top:18px;">
-                If you need immediate assistance, contact us at:
-              </p>
+            <!-- User Details -->
+            <h3 style="margin-top:20px;">Your Registration Details</h3>
 
-              <p style="margin-bottom:4px;"><strong>Email:</strong> <a href="mailto:info@cabnex.in" target="_blank" style="color:#0ea5a4; text-decoration:none;">info@cabnex.in</a></p>
-              <p style="margin-top:0;"><strong>Phone:</strong> <a href="tel:+919667284400" target="_blank" style="color:#0ea5a4; text-decoration:none;">+91 96672 84400</a></p>
+            <table width="100%" cellpadding="8" cellspacing="0"
+              style="border:1px solid #e5e7eb; border-radius:6px; font-size:14px;">
+              <tr style="background:#f8fafc;">
+                <td width="35%"><strong>Full Name</strong></td>
+                <td>${user.fullName || "-"}</td>
+              </tr>
+              <tr>
+                <td><strong>Email</strong></td>
+                <td>${user.email || "-"}</td>
+              </tr>
+              <tr style="background:#f8fafc;">
+                <td><strong>Mobile</strong></td>
+                <td>${user.mobile || "-"}</td>
+              </tr>
+              <tr>
+                <td><strong>PAN</strong></td>
+                <td>${user.pan || "-"}</td>
+              </tr>
+              <tr style="background:#f8fafc;">
+                <td><strong>GST</strong></td>
+                <td>${user.gst || "Not Provided"}</td>
+              </tr>
+            </table>
 
-              <p style="margin-top:18px;">
-                We look forward to a successful and mutually beneficial collaboration.
-              </p>
+            <p class="meta" style="margin-top:16px;">
+            Our onboarding team will contact you soon to provide assistance and a product demo. In the meantime, if you have any questions or require help, please contact our partnership support team.
+            </p>
 
-              <p style="margin-top:20px;"><strong>Best regards,<br>Team Cabnex</strong></p>
+            <!-- CTA -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;">
+              <tr>
+                <td style="padding-top:8px;">
+                  <a href="https://www.cabnex.in" target="_blank"
+                    style="background-color:#0ea5a4; color:#ffffff; padding:12px 24px;
+                    text-decoration:none; border-radius:6px; display:inline-block; font-weight:bold;">
+                    Visit Cabnex
+                  </a>
+                </td>
+              </tr>
+            </table>
 
-            </td>
-          </tr>
+            <p style="margin-top:18px;">If you need immediate assistance, contact us at:</p>
 
-          <tr>
-            <td class="footer">
-              © <strong>Cabnex</strong> — All rights reserved.<br>
-              <a href="https://www.cabnex.in" target="_blank" style="color:#94a3b8; text-decoration:underline;">www.cabnex.in</a>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-    `,
+            <p style="margin-bottom:4px;">
+              <strong>Email:</strong>
+              <a href="mailto:info@cabnex.in" style="color:#0ea5a4; text-decoration:none;">
+                info@cabnex.in
+              </a>
+            </p>
+            <p style="margin-top:0;">
+              <strong>Phone:</strong>
+              <a href="tel:+919667284400" style="color:#0ea5a4; text-decoration:none;">
+                +91 96672 84400
+              </a>
+            </p>
+
+            <p style="margin-top:18px;">
+              We look forward to a successful and mutually beneficial collaboration.
+            </p>
+
+            <p style="margin-top:20px;">
+              <strong>Best regards,<br>Team Cabnex</strong>
+            </p>
+
+          </td>
+        </tr>
+
+        <tr>
+          <td class="footer" style="text-align:center; color:#94a3b8; font-size:12px; padding-top:16px;">
+            © <strong>Cabnex</strong> — All rights reserved.<br>
+            <a href="https://www.cabnex.in" target="_blank"
+              style="color:#94a3b8; text-decoration:underline;">www.cabnex.in</a>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+`,
   );
 });
 
