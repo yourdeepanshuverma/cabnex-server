@@ -8,6 +8,30 @@ import axios from "axios";
  */
 
 export const sendOtpSms = async (phone, otp) => {
+  if (!process.env.NEXTINCLOUD_API) {
+    throw new Error("NEXTINCLOUD_API is not defined in environment variables");
+  } else if (!process.env.NEXTINCLOUD_USERNAME) {
+    throw new Error(
+      "NEXTINCLOUD_USERNAME is not defined in environment variables",
+    );
+  } else if (!process.env.NEXTINCLOUD_APIKEY) {
+    throw new Error(
+      "NEXTINCLOUD_APIKEY is not defined in environment variables",
+    );
+  } else if (!process.env.NEXTINCLOUD_SIGNATURE) {
+    throw new Error(
+      "NEXTINCLOUD_SIGNATURE is not defined in environment variables",
+    );
+  } else if (!process.env.NEXTINCLOUD_ENTITY_ID_LOGIN) {
+    throw new Error(
+      "NEXTINCLOUD_ENTITY_ID_LOGIN is not defined in environment variables",
+    );
+  } else if (!process.env.NEXTINCLOUD_TEMPLATE_ID_LOGIN) {
+    throw new Error(
+      "NEXTINCLOUD_TEMPLATE_ID_LOGIN is not defined in environment variables",
+    );
+  }
+
   try {
     const baseUrl = process.env.NEXTINCLOUD_API;
 
