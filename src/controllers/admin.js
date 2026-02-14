@@ -337,28 +337,35 @@ const userStats = asyncHandler(async (_, res) => {
 
 // Get all users
 const allUsers = asyncHandler(async (req, res) => {
-  const { search, page = 1, resultPerPage = 10 } = req.query;
+  const { search, page = 1, resultPerPage = 10, startDate, endDate } = req.query;
   const skip = (page - 1) * resultPerPage;
 
+  let query = {};
+
+  if (search) {
+    query.$or = [
+      { fullName: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+      { mobile: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  if (startDate && endDate) {
+    query.createdAt = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    };
+  }
+
   const [users, totalCount] = await Promise.all([
-    User.find(
-      search
-        ? {
-            $or: [
-              { fullName: { $regex: search, $options: "i" } },
-              { email: { $regex: search, $options: "i" } },
-              { mobile: { $regex: search, $options: "i" } },
-            ],
-          }
-        : {},
-    )
+    User.find(query)
       .select("fullName email mobile isVerified createdAt")
       .sort({
         createdAt: -1,
       })
       .skip(skip)
       .limit(resultPerPage),
-    User.countDocuments(),
+    User.countDocuments(query),
   ]);
 
   const totalPages = Math.ceil(totalCount / resultPerPage);
@@ -427,7 +434,7 @@ const bookingStats = asyncHandler(async (_, res) => {
 
 // get all bookings
 const allBookings = asyncHandler(async (req, res) => {
-  const { search = "", status, page, resultPerPage = 10 } = req.query;
+  const { search = "", status, page, resultPerPage = 10, startDate, endDate } = req.query;
   const skip = (page - 1) * resultPerPage;
 
   const filter = {};
@@ -444,6 +451,13 @@ const allBookings = asyncHandler(async (req, res) => {
     filter.status = status;
   }
 
+  if (startDate && endDate) {
+    filter.createdAt = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    };
+  }
+
   const [bookings, totalCount] = await Promise.all([
     Booking.find(filter)
       .sort({
@@ -453,7 +467,7 @@ const allBookings = asyncHandler(async (req, res) => {
       .limit(resultPerPage)
       .populate("userId", "fullName email mobile")
       .populate("assignedVendor", "contactPerson email company contactPhone"),
-    Booking.countDocuments(),
+    Booking.countDocuments(filter),
   ]);
 
   const totalPages = Math.ceil(totalCount / resultPerPage);
@@ -542,7 +556,7 @@ const vendorStats = asyncHandler(async (_, res) => {
 
 // get all vendors
 const allVendors = asyncHandler(async (req, res) => {
-  const { search = "", status, page = 1, resultPerPage = 10 } = req.query;
+  const { search = "", status, page = 1, resultPerPage = 10, startDate, endDate } = req.query;
   const skip = (page - 1) * resultPerPage;
 
   // Build filter dynamically
@@ -562,6 +576,13 @@ const allVendors = asyncHandler(async (req, res) => {
     ];
   }
 
+  if (startDate && endDate) {
+    filter.createdAt = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    };
+  }
+
   const [vendors, totalCount] = await Promise.all([
     Vendor.find({ ...filter })
       .select(
@@ -577,7 +598,7 @@ const allVendors = asyncHandler(async (req, res) => {
       .skip(skip)
       .limit(resultPerPage)
       .populate("cars"),
-    Vendor.countDocuments(),
+    Vendor.countDocuments(filter),
   ]);
 
   const totalPages = Math.ceil(totalCount / resultPerPage);
