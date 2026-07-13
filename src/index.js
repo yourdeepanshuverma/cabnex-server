@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.js";
 import packageRoutes from "./routes/package.js";
 import vendorRoutes from "./routes/vendor.js";
 import transactionRoutes from "./routes/transaction.js";
+import itineraryRoutes from "./routes/itinerary.js";
 import otpRoutes from "./routes/otp.js";
 
 const app = express();
@@ -31,20 +32,20 @@ cloudinary.config({
 app.use(
   express.json({
     limit: "16kb",
-  })
+  }),
 );
 
 app.use(
   express.urlencoded({
     extended: true,
     limit: "16kb",
-  })
+  }),
 );
 
 app.use(
   cookieParser({
     limit: "16kb",
-  })
+  }),
 );
 
 app.use(
@@ -55,12 +56,13 @@ app.use(
       "https://www.cabnex.in",
       "https://admin.cabnex.in",
       "https://dev.cabnex.in",
+      "https://itinerary.cabnex.in",
       "http://localhost:5173",
       "http://localhost:5174",
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
-  })
+  }),
 );
 
 app.get("/", (req, res) => {
@@ -72,6 +74,7 @@ app.use("/api/v1/vendor", vendorRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/package", packageRoutes);
 app.use("/api/v1/transaction", transactionRoutes);
+app.use("/api/v1/itinerary", itineraryRoutes);
 app.use("/api/v1/otp", otpRoutes);
 
 app.use(errorMiddleware);

@@ -337,7 +337,13 @@ const userStats = asyncHandler(async (_, res) => {
 
 // Get all users
 const allUsers = asyncHandler(async (req, res) => {
-  const { search, page = 1, resultPerPage = 10, startDate, endDate } = req.query;
+  const {
+    search,
+    page = 1,
+    resultPerPage = 10,
+    startDate,
+    endDate,
+  } = req.query;
   const skip = (page - 1) * resultPerPage;
 
   let query = {};
@@ -434,7 +440,14 @@ const bookingStats = asyncHandler(async (_, res) => {
 
 // get all bookings
 const allBookings = asyncHandler(async (req, res) => {
-  const { search = "", status, page, resultPerPage = 10, startDate, endDate } = req.query;
+  const {
+    search = "",
+    status,
+    page,
+    resultPerPage = 10,
+    startDate,
+    endDate,
+  } = req.query;
   const skip = (page - 1) * resultPerPage;
 
   const filter = {};
@@ -556,7 +569,14 @@ const vendorStats = asyncHandler(async (_, res) => {
 
 // get all vendors
 const allVendors = asyncHandler(async (req, res) => {
-  const { search = "", status, page = 1, resultPerPage = 10, startDate, endDate } = req.query;
+  const {
+    search = "",
+    status,
+    page = 1,
+    resultPerPage = 10,
+    startDate,
+    endDate,
+  } = req.query;
   const skip = (page - 1) * resultPerPage;
 
   // Build filter dynamically
