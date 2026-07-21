@@ -12,6 +12,7 @@ import vendorRoutes from "./routes/vendor.js";
 import transactionRoutes from "./routes/transaction.js";
 import itineraryRoutes from "./routes/itinerary.js";
 import otpRoutes from "./routes/otp.js";
+import hotelBookingQueryRoutes from "./routes/hotelBookingQuery.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -76,6 +77,7 @@ app.use("/api/v1/package", packageRoutes);
 app.use("/api/v1/transaction", transactionRoutes);
 app.use("/api/v1/itinerary", itineraryRoutes);
 app.use("/api/v1/otp", otpRoutes);
+app.use("/api/v1/hotel-booking", hotelBookingQueryRoutes);
 
 app.use(errorMiddleware);
 
