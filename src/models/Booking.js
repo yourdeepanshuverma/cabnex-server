@@ -42,7 +42,10 @@ const bookingSchema = new Schema(
     startLocation: {
       place_id: {
         type: String,
-        required: [true, "Start location place ID is required."],
+      },
+      cityId: {
+        type: Types.ObjectId,
+        ref: "City",
       },
       address: {
         type: String,
@@ -53,6 +56,10 @@ const bookingSchema = new Schema(
       {
         place_id: {
           type: String,
+        },
+        cityId: {
+          type: Types.ObjectId,
+          ref: "City",
         },
         address: {
           type: String,

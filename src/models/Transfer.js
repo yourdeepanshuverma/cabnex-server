@@ -8,8 +8,19 @@ const transferSchema = new Schema({
   },
   place_id: {
     type: String,
-    required: [true, "Place ID is required."],
-    unique: true,
+  },
+  distanceKm: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  garageCity: {
+    type: String,
+  },
+  garageReturnKm: {
+    type: Number,
+    default: 0,
+    min: 0,
   },
   type: {
     type: String,

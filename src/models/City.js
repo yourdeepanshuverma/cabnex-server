@@ -5,7 +5,11 @@ const citySchema = new Schema({
   place_id: {
     type: String,
     trim: true,
-    unique: true,
+  },
+  localKmPerDay: {
+    type: Number,
+    default: 100,
+    min: 0,
   },
   category: [
     {

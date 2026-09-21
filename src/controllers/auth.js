@@ -1,17 +1,15 @@
-import axios from "axios";
 import Booking from "../models/Booking.js";
 import City from "../models/City.js";
 import RentalPackage from "../models/RentalPackage.js";
 import Transfer from "../models/Transfer.js";
 import TravelQuery from "../models/TravelQuery.js";
 import User from "../models/User.js";
+import Garage from "../models/Garage.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ErrorResponse from "../utils/ErrorResponse.js";
 import generateToken from "../utils/generateToken.js";
 import {
-  calculateTax,
   generateOtp,
-  getCityFromPlaceId,
   getTotalDays,
   renderActivityInfo,
   renderAddons,
@@ -22,6 +20,16 @@ import redis from "../utils/redisClient.js";
 import { sendOtpSms } from "../utils/smsService.js";
 import SuccessResponse from "../utils/SuccessResponse.js";
 import sendEmail from "../utils/sendEmail.js";
+import {
+  getRouteDistance,
+  calculateMultiCityDistance,
+  calculateTotalTripKm,
+} from "../utils/distanceCalculator.js";
+import {
+  calculatePricingForAllCategories,
+  calculateVehiclePrice,
+} from "../utils/pricingEngine.js";
+import RateMaster from "../models/RateMaster.js";
 
 const cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 30,
@@ -440,111 +448,40 @@ const logout = asyncHandler(async (req, res) => {
     .json(new SuccessResponse(200, "Logged out successfully"));
 });
 
-// Search cars for trip
+// Search cars for trip — Static distance + Excel pricing engine
 const searchCarsForTrip = asyncHandler(async (req, res, next) => {
   const {
-    pickupLocation,
+    pickupCityId,
     serviceType,
     pickupDateTime,
     returnDateTime,
     packageId,
-    destinations,
+    destinations, // array of { cityId, nightsAtCity } for outstation, or [transferId] for transfer
     oneWay,
-    transferDirection,
+    rateModel,
+    transferId,
+    agentGradeId,
+    cabnexMarginPercent,
+    charges,
+    garageCityId,
   } = req.body;
 
-  // Validate pickup location using Google Places API
-  const { data: placeDetails } = await axios.get(
-    "https://maps.googleapis.com/maps/api/place/details/json?",
-    {
-      params: {
-        place_id:
-          serviceType === "transfer"
-            ? transferDirection === "home-to-station"
-              ? destinations[0]
-              : pickupLocation
-            : pickupLocation,
-        key: process.env.GOOGLE_MAPS_API_KEY,
-        fields: "name,place_id,address_component",
-      },
-    },
-  );
-
-  if (placeDetails.status !== "OK") {
-    return next(new ErrorResponse(400, "Invalid pickup location"));
-  }
-
-  // Format the pickup location to match city naming conventions
-  const formattedPickupLocation = placeDetails.result.address_components
-    .find(
-      (comp) =>
-        comp.types.includes("locality") ||
-        comp.types.includes("administrative_area_level_1"),
-    )
-    ?.long_name.trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-");
-
-  // Handle transfer service type separately
+  // ─── TRANSFER SERVICE ───
   if (serviceType === "transfer") {
-    let transfer = await Transfer.findOne({
-      $or: [
-        { place_id: placeDetails?.result?.place_id },
-        {
-          name: {
-            $regex: new RegExp(
-              `^${placeDetails?.result?.name
-                ?.toLowerCase()
-                .split(" ")
-                .join("-")}`,
-              "i",
-            ),
-          },
-        },
-      ],
-    }).populate("category.type", "-carNames");
+    const transfer = await Transfer.findById(transferId).populate(
+      "category.type",
+      "-carNames",
+    );
 
-    // Fallback to default transfer if specific one not found
-    // if (!transfer) {
-    //   transfer = await Transfer.findOne({
-    //     name: "default",
-    //   }).populate("category.type", "-carNames");
-    // }
+    if (!transfer) {
+      return next(new ErrorResponse(404, "Transfer not found"));
+    }
 
     const activeCategories =
       transfer?.category?.filter((cat) => cat.isActive) || [];
 
-    const { data: distanceData } = await axios.get(
-      "https://maps.googleapis.com/maps/api/directions/json",
-      {
-        params: {
-          origin: `place_id:${pickupLocation}`,
-          destination: `place_id:${destinations[0]}`,
-          key: process.env.GOOGLE_MAPS_API_KEY,
-        },
-      },
-    );
-
-    if (distanceData.status !== "OK") {
-      return next(new ErrorResponse(400, "Error fetching distance data"));
-    }
-
-    // Sum up distances from origin to destination
-    // Convert meters to kilometers and round up
-    const [distance, time] = await Promise.all([
-      Math.ceil(
-        distanceData.routes[0].legs.reduce((acc, elem) => {
-          acc += elem.distance.value;
-          return acc;
-        }, 0) / 1000,
-      ),
-      Math.ceil(
-        distanceData.routes[0].legs.reduce((acc, elem) => {
-          acc += elem.duration.value;
-          return acc;
-        }, 0) / 60,
-      ),
-    ]);
+    // Use the static distance from the Transfer document
+    const distance = transfer.distanceKm || 0;
 
     const updatedCategories = activeCategories?.map((category) => {
       let totalAmount = category.baseFare || 0;
@@ -556,12 +493,17 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         totalAmount += extraKmCharges;
       }
 
-      const tax = calculateTax(totalAmount, category.taxSlab);
+      // Hill charge from transfer category
+      const hillCharge = category.hillCharge || 0;
+      totalAmount += hillCharge;
 
+      // Tax
+      const taxSlab = category.taxSlab || 0;
+      const tax = taxSlab > 0 ? (totalAmount * taxSlab) / 100 : 0;
       totalAmount += tax;
 
       return {
-        ...(category.toObject?.() || category), // handle both Mongoose docs or plain JS objects
+        ...(category.toObject?.() || category),
         totalAmount,
         extraKmCharges,
         tax,
@@ -570,245 +512,220 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
 
     return res.status(200).json(
       new SuccessResponse(200, "Cars retrieved successfully", {
-        city: formattedPickupLocation,
+        city: transfer.city,
         distance,
-        time,
+        time: 0,
         categories: updatedCategories,
       }),
     );
   }
 
-  // Find car categories available in the pickup city
-  let categoriesInCity = await City.findOne({
-    isActive: true,
-    city: {
-      $regex: new RegExp(`^${formattedPickupLocation}`, "i"),
-    },
-  })
-    .populate("category.type", "-carNames")
-    .select("-activities");
+  // ─── Validate pickup city ───
+  const pickupCity = await City.findById(pickupCityId);
+  if (!pickupCity || !pickupCity.isActive) {
+    return next(new ErrorResponse(400, "Invalid or inactive pickup city"));
+  }
 
-  // Fallback to default city
-  // if (!categoriesInCity) {
-  //   categoriesInCity = await City.findOne({
-  //     isActive: true,
-  //     city: "default",
-  //   }).populate("category.type", "-carNames");
-  // }
+  // ─── ACTIVITY SERVICE ───
+  if (serviceType === "activity") {
+    const activitiesInCity = await City.findOne({
+      _id: pickupCityId,
+      isActive: true,
+    })
+      .select("-category")
+      .populate("activities");
 
-  const activeCategories =
-    categoriesInCity?.category?.filter((cat) => cat.isActive) || [];
+    const ActiveActivities = activitiesInCity?.activities
+      ?.filter((act) => act.isActive)
+      ?.map((activity) => ({ ...activity, totalAmount: activity?.price }));
 
-  if (destinations && destinations.length > 0) {
-    const destinationsParams = oneWay
-      ? destinations
-      : [...destinations, pickupLocation];
-
-    const origin = `place_id:${pickupLocation}`;
-    const destination = `place_id:${
-      destinationsParams[destinationsParams.length - 1]
-    }`;
-    const waypoints = destinationsParams
-      ?.slice(0, -1)
-      ?.map((p) => `place_id:${p}`)
-      .join("|");
-
-    // Calculate total distance using Google Distance Matrix API
-    const { data: distanceData } = await axios.get(
-      "https://maps.googleapis.com/maps/api/directions/json",
-      {
-        params: {
-          origin,
-          destination,
-          waypoints: waypoints || undefined,
-          key: process.env.GOOGLE_MAPS_API_KEY,
-        },
-      },
-    );
-
-    if (distanceData.status !== "OK") {
-      return next(new ErrorResponse(400, "Error fetching distance data"));
-    }
-
-    // Sum up distances from origin to all destinations
-    // Convert meters to kilometers and round up
-    let [distance, time] = await Promise.all([
-      Math.ceil(
-        distanceData.routes[0].legs.reduce((acc, elem) => {
-          acc += elem.distance.value;
-          return acc;
-        }, 0) / 1000,
-      ),
-      Math.ceil(
-        distanceData.routes[0].legs.reduce((acc, elem) => {
-          acc += elem.duration.value;
-          return acc;
-        }, 0) / 60,
-      ),
-    ]);
-
-    let allCityCharges = {};
-    let totalHillCharge = 0;
-    let cityActivities = [];
-
-    await Promise.all(
-      destinations?.map(async (placeId) => {
-        const cityName = await getCityFromPlaceId(placeId);
-        const city = await City.findOne({
-          isActive: true,
-          city: {
-            $regex: new RegExp(`^${cityName}`, "i"),
-          },
-        }).populate("activities");
-
-        if (!city) return null;
-
-        distance += city?.bufferKm || 0;
-        totalHillCharge += city?.hillCharge || 0;
-        cityActivities = [
-          ...new Map(
-            [...cityActivities, ...(city?.activities || [])]?.map(
-              (activity) => [activity._id.toString(), activity],
-            ),
-          ).values(),
-        ];
-
-        // format output — category wise permitCharge
-        city.category.forEach((cat) => {
-          const id = cat.type.toString();
-
-          if (!allCityCharges[id]) {
-            allCityCharges[id] = {
-              permitCharge: 0,
-            };
-          }
-
-          allCityCharges[id].permitCharge += cat.permitCharge || 0;
-        });
+    return res.status(200).json(
+      new SuccessResponse(200, "Activities retrieved successfully", {
+        city: pickupCity.city,
+        activities: ActiveActivities,
       }),
     );
+  }
 
-    const updatedCategories = activeCategories?.map((category) => {
-      const id = category.type._id.toString();
-      let totalAmount = 0;
+  // ─── RENTAL SERVICE ───
+  if (serviceType === "rental") {
+    const rental = await RentalPackage.findById(packageId);
+    if (!rental) {
+      return next(
+        new ErrorResponse(404, "Selected rental package not found"),
+      );
+    }
 
-      const totalPermitCharge =
-        category.permitCharge + (allCityCharges[id]?.permitCharge || 0);
+    // Get rates for pickup city's state
+    const selectedRateModel = rateModel || "daily-included-km";
+    const state = pickupCity.state;
 
-      const days = getTotalDays(pickupDateTime, returnDateTime) || 1;
+    const rates = await RateMaster.find({
+      rateModel: selectedRateModel,
+      state: { $regex: new RegExp(`^${state}`, "i") },
+      isActive: true,
+    }).populate("vehicleCategory");
 
-      category.baseFare = category.freeKmPerDay * days * category.perKmCharge;
+    const updatedCategories = rates?.map((rate) => {
+      const perHourTotal = rental.duration * (rate.baseRatePerDay / 8); // approximate hourly from daily
+      const perKmTotal = rental.kilometer * rate.extraKmRate;
 
-      totalAmount += category.baseFare;
-      totalAmount += totalHillCharge;
-      totalAmount += totalPermitCharge;
+      let totalAmount = Math.max(perHourTotal, perKmTotal);
+      const baseFare = totalAmount;
 
-      const totalDriverAllowance = category.driverAllowance * days;
-      const totalNightCharge = category.nightCharge * Math.max(days - 1, 0);
-      totalAmount += totalDriverAllowance + totalNightCharge;
-
-      const extraKmCharges =
-        Math.max(0, distance - category.freeKmPerDay * days) *
-        category.extraKmCharge;
-
-      totalAmount += extraKmCharges;
-
-      const tax = calculateTax(totalAmount, category.taxSlab);
-
+      const tax = 0; // taxes handled via pricing engine if needed
       totalAmount += tax;
 
       return {
-        ...(category.toObject?.() || category), // handle both Mongoose docs or plain JS objects
+        vehicleCategory: rate.vehicleCategory,
+        rateId: rate._id,
+        baseFare,
         totalAmount,
-        extraKmCharges,
-        totalDriverAllowance,
-        totalNightCharge,
-        totalHillCharge,
-        totalPermitCharge,
-        totalDays: days,
-        totalNights: Math.max(days - 1, 0),
         tax,
+        rateModel: rate.rateModel,
       };
     });
 
     return res.status(200).json(
       new SuccessResponse(200, "Cars retrieved successfully", {
-        city: formattedPickupLocation,
-        distance,
-        time,
+        city: pickupCity.city,
+        distance: rental.kilometer,
+        time: rental.duration * 60,
         categories: updatedCategories,
-        cityActivities,
       }),
     );
-  } else {
-    if (serviceType === "rental") {
-      const rental = await RentalPackage.findById(packageId);
+  }
 
-      if (!rental) {
-        return next(
-          new ErrorResponse(404, "Selected rental package not found"),
-        );
-      }
-
-      const updatedCategories = activeCategories?.map((category) => {
-        const perHourTotal = rental.duration * category.perHourCharge;
-        const perKmTotal = rental.kilometer * category.perKmCharge;
-
-        let totalAmount = Math.max(perHourTotal, perKmTotal);
-        category.baseFare = totalAmount;
-
-        const tax = calculateTax(totalAmount, category.taxSlab);
-
-        totalAmount += tax;
-
-        return {
-          ...(category.toObject?.() || category), // handle both Mongoose docs or plain JS objects
-          totalAmount,
-          tax,
-        };
-      });
-
-      return res.status(200).json(
-        new SuccessResponse(200, "Cars retrieved successfully", {
-          city: formattedPickupLocation,
-          distance: rental.kilometer,
-          time: rental.duration * 60,
-          categories: updatedCategories,
-        }),
-      );
-    }
-
-    if (serviceType === "activity") {
-      const activitiesInCity = await City.findOne({
-        isActive: true,
-        city: {
-          $regex: new RegExp(`^${formattedPickupLocation}`, "i"),
-        },
-      })
-        .select("-category")
-        .populate("activities");
-
-      const ActiveActivities = activitiesInCity?.activities
-        ?.filter((act) => act.isActive)
-        ?.map((activity) => ({ ...activity, totalAmount: activity?.price }));
-
-      return res.status(200).json(
-        new SuccessResponse(200, "Activities retrieved successfully", {
-          city: formattedPickupLocation,
-          activities: ActiveActivities,
-        }),
-      );
-    }
-
+  // ─── OUTSTATION SERVICE ───
+  if (!destinations || destinations.length === 0) {
     return res.status(200).json(
       new SuccessResponse(200, "Cars retrieved successfully", {
-        city: formattedPickupLocation,
+        city: pickupCity.city,
         distance: 0,
         time: 0,
-        categories: activeCategories,
+        categories: [],
       }),
     );
   }
+
+  // Build legs array for distance calculation
+  const legs = destinations.map((dest) => ({
+    cityId: typeof dest === "object" && dest !== null ? (dest.cityId || dest._id) : dest,
+    nightsAtCity: (typeof dest === "object" && dest !== null ? dest.nightsAtCity : 0) || 0,
+  }));
+
+  // For round trips, add return to pickup city
+  if (!oneWay) {
+    legs.push({ cityId: pickupCityId, nightsAtCity: 0 });
+  }
+
+  // Determine garage city (auto-lookup from Garage Master if not explicitly provided)
+  let effectiveGarageCityId = garageCityId;
+  if (!effectiveGarageCityId) {
+    const garage = await Garage.findOne({
+      assignedCities: pickupCityId,
+      isActive: true,
+    });
+    if (garage && garage.garageCity) {
+      effectiveGarageCityId = garage.garageCity;
+    } else {
+      effectiveGarageCityId = pickupCityId;
+    }
+  }
+
+  // Determine drop city (last destination for one-way, pickup for round)
+  const lastDest = destinations[destinations.length - 1];
+  const dropCityId = oneWay
+    ? (typeof lastDest === "object" && lastDest !== null ? (lastDest.cityId || lastDest._id) : lastDest)
+    : pickupCityId;
+
+  // Calculate total trip KM using static distances
+  let distanceBreakdown;
+  try {
+    distanceBreakdown = await calculateTotalTripKm({
+      garageCityId: effectiveGarageCityId,
+      pickupCityId,
+      legs,
+      dropCityId,
+    });
+  } catch (err) {
+    return next(new ErrorResponse(400, err.message));
+  }
+
+  if (distanceBreakdown.routeStatus === "CHECK KM") {
+    return next(
+      new ErrorResponse(
+        400,
+        "Some routes are missing from KM Master. Please add them before searching.",
+      ),
+    );
+  }
+
+  // Calculate service days
+  const serviceDays = getTotalDays(pickupDateTime, returnDateTime) || 1;
+  const selectedRateModel = rateModel || "daily-included-km";
+
+  // Extract destination city IDs
+  const destinationCityIds = destinations.map((d) =>
+    typeof d === "object" && d !== null ? (d.cityId || d._id) : d,
+  );
+
+  // Calculate pricing using the Excel formula with automated state permit detection
+  let pricingResult;
+  try {
+    pricingResult = await calculatePricingForAllCategories({
+      garageCityId: effectiveGarageCityId,
+      pickupCityId,
+      destinationCityIds,
+      dropCityId,
+      rateModel: selectedRateModel,
+      serviceDays,
+      chargeableKm: distanceBreakdown.chargeableKm,
+      charges: charges || {},
+      travelDate: pickupDateTime,
+      agentGradeId,
+      cabnexMarginPercent: cabnexMarginPercent || 0.05,
+    });
+  } catch (err) {
+    return next(new ErrorResponse(400, err.message));
+  }
+
+  // Get activities for destination cities
+  let cityActivities = [];
+  const destinationCities = await City.find({
+    _id: { $in: destinationCityIds },
+    isActive: true,
+  }).populate("activities");
+
+  for (const city of destinationCities) {
+    if (city.activities && city.activities.length > 0) {
+      cityActivities = [
+        ...new Map(
+          [...cityActivities, ...city.activities].map((activity) => [
+            activity._id.toString(),
+            activity,
+          ]),
+        ).values(),
+      ];
+    }
+  }
+
+  return res.status(200).json(
+    new SuccessResponse(200, "Cars retrieved successfully", {
+      city: pickupCity.city,
+      distance: distanceBreakdown.chargeableKm,
+      distanceBreakdown,
+      serviceDays,
+      rateModel: selectedRateModel,
+      categories: pricingResult.categories,
+      surchargeInfo: pricingResult.surchargeInfo,
+      agentGrade: pricingResult.agentGrade,
+      foreignStatesEntered: pricingResult.foreignStatesEntered,
+      baseState: pricingResult.baseState,
+      markupInfo: pricingResult.markupInfo,
+      cityActivities,
+    }),
+  );
 });
 
 // Submit travel query

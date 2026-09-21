@@ -56,6 +56,12 @@ const websiteSettingSchema = new mongoose.Schema(
       description: { type: String, default: "" },
       keywords: [{ type: String }],
     },
+    defaultCommissionPercent: {
+      type: Number,
+      default: 0.05,
+      min: 0,
+      max: 1,
+    },
   },
   { timestamps: true }
 );

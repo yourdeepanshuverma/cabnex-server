@@ -2,8 +2,9 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
+    const baseUri = (process.env.MONGODB_URI || "").replace(/\/+$/, "");
     const connectionInstance = await mongoose.connect(
-      `${process.env.MONGODB_URI}/${process.env.DB_NAME}`
+      `${baseUri}/${process.env.DB_NAME || "Cabnex"}`
     );
     console.log(
       `\nMongoDB Connected !! DB HOST: ${connectionInstance.connection.host}`
