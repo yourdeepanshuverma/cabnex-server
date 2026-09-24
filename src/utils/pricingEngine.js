@@ -1,5 +1,4 @@
 import RateMaster from "../models/RateMaster.js";
-import ChargeMaster from "../models/ChargeMaster.js";
 import SurchargeMaster from "../models/SurchargeMaster.js";
 import AgentGrade from "../models/AgentGrade.js";
 import City from "../models/City.js";
@@ -37,19 +36,13 @@ export async function getApplicableSurcharge(travelDate) {
 }
 
 /**
- * Get the default charges from Charge Master.
+ * Default charges for trips. Toll/permit is handled dynamically via State Permit Master;
+ * parking is at actuals (excluded from automatic base quote).
  *
- * @returns {Promise<Object>} Default charges keyed by name
+ * @returns {Promise<Object>} Empty default charges
  */
 export async function getDefaultCharges() {
-  const charges = await ChargeMaster.find({ isActive: true });
-  const defaults = {};
-
-  for (const charge of charges) {
-    defaults[charge.name] = charge.defaultAmount;
-  }
-
-  return defaults;
+  return {};
 }
 
 /**
@@ -249,10 +242,12 @@ export function calculateVehiclePrice({
   // ─── Driver Bata ───
   const driverBata = rate.driverBataPerDay * serviceDays;
 
-  // ─── Manual Charges ───
-  const toll = charges.toll || 0;
-  const parking = charges.parking || 0;
+  // ─── Manual / Border Permit Charges ───
+  // Note: Toll and permit are treated as the same inter-state road tax/permit,
+  // calculated automatically via State Permit Master. Parking is at actuals / excluded.
   const permit = charges.permit || 0;
+  const toll = 0;
+  const parking = 0;
   const nightHalt = charges["night-halt"] || 0;
   const otherCharges = charges["other-charges"] || 0;
 
@@ -261,8 +256,6 @@ export function calculateVehiclePrice({
     baseVehicleCost +
     kmCost +
     driverBata +
-    toll +
-    parking +
     permit +
     nightHalt +
     otherCharges;
