@@ -28,6 +28,7 @@ import {
 import {
   calculatePricingForAllCategories,
   calculateVehiclePrice,
+  resolveApplicableCommission,
 } from "../utils/pricingEngine.js";
 import RateMaster from "../models/RateMaster.js";
 
@@ -466,15 +467,31 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
     garageCityId,
   } = req.body;
 
-  // ─── TRANSFER SERVICE ───
+  // ─── TRANSFER SERVICE (STATIC KM & STATE-WISE MARKUP) ───
   if (serviceType === "transfer") {
-    const transfer = await Transfer.findById(transferId).populate(
-      "category.type",
-      "-carNames",
-    );
+    let transfer = null;
+    if (transferId) {
+      transfer = await Transfer.findById(transferId).populate(
+        "category.type",
+        "-carNames",
+      );
+    } else if (pickupCityId) {
+      const cityObj = await City.findById(pickupCityId);
+      if (cityObj) {
+        transfer = await Transfer.findOne({
+          city: new RegExp(`^${cityObj.city}$`, "i"),
+          isActive: true,
+        }).populate("category.type", "-carNames");
+      }
+    }
 
     if (!transfer) {
-      return next(new ErrorResponse(404, "Transfer not found"));
+      return next(
+        new ErrorResponse(
+          404,
+          "No transfer route found for this city. Please select another route or contact support.",
+        ),
+      );
     }
 
     const activeCategories =
@@ -483,30 +500,53 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
     // Use the static distance from the Transfer document
     const distance = transfer.distanceKm || 0;
 
+    // Resolve state/city markup using StateMarkup & WebsiteSetting commission hierarchy
+    const commissionInfo = await resolveApplicableCommission({
+      state: transfer.state,
+      cityId: pickupCityId,
+      manualMarginPercent: cabnexMarginPercent,
+    });
+    const marginPercent = commissionInfo.marginPercent;
+
     const updatedCategories = activeCategories?.map((category) => {
-      let totalAmount = category.baseFare || 0;
+      const baseFare = category.baseFare || 0;
       let extraKmCharges = 0;
 
       if (distance > category.baseKm) {
         const extraKm = distance - category.baseKm;
-        extraKmCharges = extraKm * category.extraKmCharge;
-        totalAmount += extraKmCharges;
+        extraKmCharges = extraKm * (category.extraKmCharge || 0);
       }
 
       // Hill charge from transfer category
       const hillCharge = category.hillCharge || 0;
-      totalAmount += hillCharge;
+      const subtotal = baseFare + extraKmCharges + hillCharge;
 
-      // Tax
+      // Apply State Markup / Commission
+      let markupAmount = 0;
+      if (commissionInfo.rule?.markupType === "flat") {
+        markupAmount = commissionInfo.rule.flatAmount || 0;
+      } else {
+        markupAmount = Math.round(subtotal * marginPercent);
+      }
+      const amountAfterMarkup = subtotal + markupAmount;
+
+      // Tax (applied on amount after markup)
       const taxSlab = category.taxSlab || 0;
-      const tax = taxSlab > 0 ? (totalAmount * taxSlab) / 100 : 0;
-      totalAmount += tax;
+      const tax = taxSlab > 0 ? (amountAfterMarkup * taxSlab) / 100 : 0;
+      const totalAmount = Math.round(amountAfterMarkup + tax);
 
       return {
         ...(category.toObject?.() || category),
-        totalAmount,
+        baseFare,
         extraKmCharges,
+        hillCharge,
+        subtotal,
+        markupAmount,
+        amountAfterMarkup,
         tax,
+        totalAmount,
+        commissionSource: commissionInfo.source,
+        marginPercent,
       };
     });
 

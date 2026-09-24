@@ -6,9 +6,6 @@ const transferSchema = new Schema({
     required: [true, "Name is required."],
     unique: true,
   },
-  place_id: {
-    type: String,
-  },
   distanceKm: {
     type: Number,
     default: 0,

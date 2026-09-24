@@ -1057,28 +1057,31 @@ const updateACar = asyncHandler(async (req, res, next) => {
 
 // Add new transfer
 const addNewTransfer = asyncHandler(async (req, res, next) => {
-  const { name, place_id, type, city, state, category } = req.body;
+  const { name, type, city, state, category, distanceKm, garageReturnKm } =
+    req.body;
 
-  req.body.name = name.toLowerCase().split(" ").join("-");
-  req.body.city = city.toLowerCase().split(" ").join("-");
-  req.body.state = state.toLowerCase().split(" ").join("-");
+  const slugName = name.toLowerCase().trim().split(" ").join("-");
+  const slugCity = city.toLowerCase().trim().split(" ").join("-");
+  const slugState = state.toLowerCase().trim().split(" ").join("-");
 
   const transferExists = await Transfer.findOne({
-    $or: [{ place_id }, { name }],
+    name: slugName,
+    city: slugCity,
   });
 
   if (transferExists) {
     return next(
-      new ErrorResponse(400, "Place with same name or place ID already exists"),
+      new ErrorResponse(400, "A transfer route with this name already exists in this city"),
     );
   }
 
   const transfer = await Transfer.create({
-    name,
-    place_id,
+    name: slugName,
     type,
-    city,
-    state,
+    city: slugCity,
+    state: slugState,
+    distanceKm: Number(distanceKm) || 0,
+    garageReturnKm: Number(garageReturnKm) || 0,
     category,
   });
 
