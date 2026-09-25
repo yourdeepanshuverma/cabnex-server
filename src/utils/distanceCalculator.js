@@ -94,34 +94,31 @@ export async function calculateMultiCityDistance(cityIds) {
 
 /**
  * Calculate local/sightseeing KM for a city based on nights staying there.
- * Local service days = max(nightsAtCity - 1, 0) for intermediate stops,
- * or nightsAtCity for the first/arrival city.
  *
- * Following Excel logic:
- * - Local Service Days = Nights at city (auto from nights, but adjusted)
- * - Final Local KM = localKmPerDay × Local Service Days
+ * Logic:
+ * - 0 nights or 1 night: No local sightseeing KM (just passing through or overnight stay)
+ * - 2+ nights: localServiceDays = nightsAtCity - 1 (arrival & departure days = travel days, not sightseeing)
+ * - Final Local KM = localKmPerDay × localServiceDays
  *
  * @param {string} cityId - ObjectId of the city
  * @param {number} nightsAtCity - Number of nights staying at this city
- * @returns {Promise<{localKm: number, localKmPerDay: number}>}
+ * @returns {Promise<{localKm: number, localKmPerDay: number, localServiceDays: number}>}
  */
 export async function getLocalKm(cityId, nightsAtCity) {
-  if (!nightsAtCity || nightsAtCity <= 0) {
-    return { localKm: 0, localKmPerDay: 0 };
+  if (!nightsAtCity || nightsAtCity < 2) {
+    return { localKm: 0, localKmPerDay: 0, localServiceDays: 0 };
   }
 
   const city = await City.findById(cityId).select("localKmPerDay city");
   const localKmPerDay = city?.localKmPerDay || 100;
 
-  // Local service days from Excel:
-  // For arrival day: 1 local service day
-  // For full days: nightsAtCity - 1 (the last night's checkout day = transfer day, no local sightseeing)
-  // But the Excel uses nightsAtCity directly for most legs, and adjusts for departure legs
-  // Simplification: localServiceDays = nightsAtCity (matches Excel "Local Service Days (Auto from Nights)")
-  const localServiceDays = nightsAtCity;
+  // Arrival day = travel day (no local sightseeing)
+  // Departure day = travel day (no local sightseeing)
+  // Full sightseeing days = nightsAtCity - 1
+  const localServiceDays = nightsAtCity - 1;
   const localKm = localKmPerDay * localServiceDays;
 
-  return { localKm, localKmPerDay };
+  return { localKm, localKmPerDay, localServiceDays };
 }
 
 /**

@@ -702,7 +702,12 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
   }
 
   // Calculate service days
-  const serviceDays = getTotalDays(pickupDateTime, returnDateTime) || 1;
+  // For multicity: total nights (sum of all nightsAtCity) + 1
+  // For one-way/round-trip: date diff or fallback to 1
+  const totalNightsFromLegs = legs.reduce((sum, leg) => sum + (leg.nightsAtCity || 0), 0);
+  const serviceDays = totalNightsFromLegs > 0
+    ? totalNightsFromLegs + 1
+    : getTotalDays(pickupDateTime, returnDateTime) || 1;
   const selectedRateModel = rateModel || "daily-included-km";
 
   // Extract destination city IDs

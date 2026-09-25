@@ -478,10 +478,18 @@ export async function calculatePricingForAllCategories({
     });
 
     return {
+      _id: (rate.vehicleCategory?._id || rate.vehicleCategory).toString(),
       vehicleCategory: rate.vehicleCategory,
       type: rate.vehicleCategory,
       rateId: rate._id,
+      baseFare: pricing.baseVehicleCost,
+      extraKmCharges: pricing.kmCost,
+      totalDriverAllowance: pricing.driverBata,
+      totalNightCharge: pricing.nightHalt,
       totalPermitCharge: pricing.permit,
+      totalDays: pricing.serviceDays,
+      freeKmPerDay: rate.includedKmPerDay,
+      extraKmRate: rate.extraKmRate,
       foreignStatesEntered: foreignStates,
       ...pricing,
     };
