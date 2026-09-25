@@ -14,25 +14,64 @@ import WebsiteSetting from "../models/WebsiteSetting.js";
  * @param {Date} travelDate - The travel/arrival date
  * @returns {Promise<{surchargePercent: number, matchedPeriod: string}>}
  */
-export async function getApplicableSurcharge(travelDate) {
-  if (!travelDate) return { surchargePercent: 0, matchedPeriod: "NORMAL / NO SURCHARGE" };
+export async function getApplicableSurcharge(travelDate, pickupCityId = null) {
+  if (!travelDate) return { surchargePercent: 0, matchedPeriod: "NORMAL / NO SURCHARGE", cityId: null };
 
   const date = new Date(travelDate);
+  if (isNaN(date.getTime())) {
+    return { surchargePercent: 0, matchedPeriod: "NORMAL / NO SURCHARGE", cityId: null };
+  }
 
-  const surcharge = await SurchargeMaster.findOne({
-    isActive: true,
-    startDate: { $lte: date },
-    endDate: { $gte: date },
+  // Convert travelDate to YYYY-MM-DD in Indian Standard Time (UTC + 5:30)
+  const istOffsetMs = 5.5 * 60 * 60 * 1000;
+  const travelDateIST = new Date(date.getTime() + istOffsetMs)
+    .toISOString()
+    .split("T")[0];
+
+  const activeSurcharges = await SurchargeMaster.find({ isActive: true });
+
+  const dateMatches = activeSurcharges.filter((surcharge) => {
+    const startStr = new Date(surcharge.startDate).toISOString().split("T")[0];
+    const endStr = new Date(surcharge.endDate).toISOString().split("T")[0];
+    return travelDateIST >= startStr && travelDateIST <= endStr;
   });
 
-  if (surcharge) {
+  if (dateMatches.length === 0) {
+    return { surchargePercent: 0, matchedPeriod: "NORMAL / NO SURCHARGE", cityId: null };
+  }
+
+  const pickupCityStr = pickupCityId ? pickupCityId.toString() : null;
+
+  // 1. Check for city-specific matches (Highest Specificity)
+  const cityMatches = pickupCityStr
+    ? dateMatches.filter((s) => s.city && s.city.toString() === pickupCityStr)
+    : [];
+
+  if (cityMatches.length > 0) {
+    // Strategy A: Highest surcharge rate wins among city rules
+    cityMatches.sort((a, b) => (b.surchargePercent || 0) - (a.surchargePercent || 0));
+    const best = cityMatches[0];
     return {
-      surchargePercent: surcharge.surchargePercent,
-      matchedPeriod: surcharge.name,
+      surchargePercent: best.surchargePercent || 0,
+      matchedPeriod: best.name,
+      cityId: pickupCityStr,
     };
   }
 
-  return { surchargePercent: 0, matchedPeriod: "NORMAL / NO SURCHARGE" };
+  // 2. Fall back to global matches (city is null / All Cities)
+  const globalMatches = dateMatches.filter((s) => !s.city);
+  if (globalMatches.length > 0) {
+    // Strategy A: Highest surcharge rate wins among global rules
+    globalMatches.sort((a, b) => (b.surchargePercent || 0) - (a.surchargePercent || 0));
+    const best = globalMatches[0];
+    return {
+      surchargePercent: best.surchargePercent || 0,
+      matchedPeriod: best.name,
+      cityId: null,
+    };
+  }
+
+  return { surchargePercent: 0, matchedPeriod: "NORMAL / NO SURCHARGE", cityId: null };
 }
 
 /**
@@ -410,9 +449,9 @@ export async function calculatePricingForAllCategories({
     );
   }
 
-  // Get surcharge for travel date
+  // Get surcharge for travel date and pickup city (Strategy A: City overrides Global; Highest rate wins)
   const { surchargePercent, matchedPeriod } =
-    await getApplicableSurcharge(travelDate);
+    await getApplicableSurcharge(travelDate, pickupCityId);
 
   // Get agent grade markup (if provided)
   let agentMarkupPercent = 0.08; // default
@@ -490,6 +529,7 @@ export async function calculatePricingForAllCategories({
       totalDays: pricing.serviceDays,
       freeKmPerDay: rate.includedKmPerDay,
       extraKmRate: rate.extraKmRate,
+      surchargeName: matchedPeriod,
       foreignStatesEntered: foreignStates,
       ...pricing,
     };

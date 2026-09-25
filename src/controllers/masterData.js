@@ -271,7 +271,9 @@ const deleteCharge = asyncHandler(async (req, res, next) => {
 // ═══════════════════════════════════════════════════
 
 const getAllSurcharges = asyncHandler(async (req, res, next) => {
-  const surcharges = await SurchargeMaster.find().sort({ startDate: 1 });
+  const surcharges = await SurchargeMaster.find()
+    .populate("city", "city state")
+    .sort({ startDate: 1 });
 
   res.status(200).json(
     new SuccessResponse(200, "Surcharges fetched successfully", { surcharges }),
@@ -279,7 +281,7 @@ const getAllSurcharges = asyncHandler(async (req, res, next) => {
 });
 
 const createSurcharge = asyncHandler(async (req, res, next) => {
-  const { name, startDate, endDate, surchargePercent, remarks } = req.body;
+  const { name, city, startDate, endDate, surchargePercent, remarks } = req.body;
 
   if (!name || !startDate || !endDate) {
     return next(
@@ -289,17 +291,23 @@ const createSurcharge = asyncHandler(async (req, res, next) => {
 
   const surcharge = await SurchargeMaster.create({
     name,
+    city: city || null,
     startDate,
     endDate,
     surchargePercent: surchargePercent || 0,
     remarks: remarks || "",
   });
 
+  const populated = await SurchargeMaster.findById(surcharge._id).populate(
+    "city",
+    "city state",
+  );
+
   res
     .status(201)
     .json(
       new SuccessResponse(201, "Surcharge created successfully", {
-        surcharge,
+        surcharge: populated || surcharge,
       }),
     );
 });
@@ -312,6 +320,7 @@ const updateSurcharge = asyncHandler(async (req, res, next) => {
 
   const allowedFields = [
     "name",
+    "city",
     "startDate",
     "endDate",
     "surchargePercent",
@@ -321,11 +330,15 @@ const updateSurcharge = asyncHandler(async (req, res, next) => {
 
   allowedFields.forEach((field) => {
     if (req.body[field] !== undefined) {
-      surcharge[field] = req.body[field];
+      surcharge[field] = req.body[field] || null;
     }
   });
 
   await surcharge.save();
+  const populated = await SurchargeMaster.findById(surcharge._id).populate(
+    "city",
+    "city state",
+  );
 
   res
     .status(200)

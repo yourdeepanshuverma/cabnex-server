@@ -1,10 +1,15 @@
-import mongoose, { model, Schema } from "mongoose";
+import mongoose, { model, Schema, Types } from "mongoose";
 
 const surchargeMasterSchema = new Schema(
   {
     name: {
       type: String,
       required: [true, "Surcharge name is required."],
+    },
+    city: {
+      type: Types.ObjectId,
+      ref: "City",
+      default: null, // null means applies to all cities (Global)
     },
     startDate: {
       type: Date,
