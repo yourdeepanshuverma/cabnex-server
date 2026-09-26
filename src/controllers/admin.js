@@ -705,8 +705,15 @@ const updateCityCharges = asyncHandler(async (req, res, next) => {
   if (!city) {
     return next(new ErrorResponse(404, "City not found"));
   }
-  city.bufferKm = req.body.bufferKm || city.bufferKm;
-  city.hillCharge = req.body.hillCharge || city.hillCharge;
+  if (req.body.localKmPerDay !== undefined) {
+    city.localKmPerDay = Math.max(0, Number(req.body.localKmPerDay) || 0);
+  }
+  if (req.body.bufferKm !== undefined) {
+    city.bufferKm = Math.max(0, Number(req.body.bufferKm) || 0);
+  }
+  if (req.body.hillCharge !== undefined) {
+    city.hillCharge = Math.max(0, Number(req.body.hillCharge) || 0);
+  }
   await city.save();
   return res
     .status(200)
@@ -714,6 +721,7 @@ const updateCityCharges = asyncHandler(async (req, res, next) => {
       new SuccessResponse(
         200,
         `${city.city} City charges updated successfully`,
+        { city },
       ),
     );
 });
