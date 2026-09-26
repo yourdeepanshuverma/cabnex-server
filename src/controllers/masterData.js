@@ -118,7 +118,8 @@ const bulkCreateRoutes = asyncHandler(async (req, res, next) => {
 const getAllRates = asyncHandler(async (req, res, next) => {
   const rates = await RateMaster.find()
     .populate("vehicleCategory", "category")
-    .sort({ state: 1, rateModel: 1 });
+    .populate("city", "city state")
+    .sort({ city: 1, rateModel: 1 });
 
   res.status(200).json(
     new SuccessResponse(200, "Rates fetched successfully", { rates }),
@@ -126,13 +127,13 @@ const getAllRates = asyncHandler(async (req, res, next) => {
 });
 
 const createRate = asyncHandler(async (req, res, next) => {
-  const { vehicleCategory, rateModel, state, baseRatePerDay, includedKmPerDay, extraKmRate, driverBataPerDay } = req.body;
+  const { vehicleCategory, rateModel, city, baseRatePerDay, includedKmPerDay, extraKmRate, driverBataPerDay, taxSlab } = req.body;
 
-  if (!vehicleCategory || !rateModel || !state) {
+  if (!vehicleCategory || !rateModel || !city) {
     return next(
       new ErrorResponse(
         400,
-        "vehicleCategory, rateModel, and state are required.",
+        "vehicleCategory, rateModel, and city are required.",
       ),
     );
   }
@@ -140,13 +141,13 @@ const createRate = asyncHandler(async (req, res, next) => {
   const existing = await RateMaster.findOne({
     vehicleCategory,
     rateModel,
-    state: state.toLowerCase().trim().replace(/\s+/g, "-"),
+    city,
   });
   if (existing) {
     return next(
       new ErrorResponse(
         400,
-        "Rate for this vehicle/model/state already exists.",
+        "Rate for this vehicle/model/city already exists.",
       ),
     );
   }
@@ -154,11 +155,12 @@ const createRate = asyncHandler(async (req, res, next) => {
   const rate = await RateMaster.create({
     vehicleCategory,
     rateModel,
-    state,
+    city,
     baseRatePerDay: baseRatePerDay || 0,
     includedKmPerDay: includedKmPerDay || 0,
     extraKmRate: extraKmRate || 0,
     driverBataPerDay: driverBataPerDay || 0,
+    taxSlab: taxSlab ?? 5,
   });
 
   res
@@ -177,6 +179,7 @@ const updateRate = asyncHandler(async (req, res, next) => {
     "includedKmPerDay",
     "extraKmRate",
     "driverBataPerDay",
+    "taxSlab",
     "isActive",
   ];
 

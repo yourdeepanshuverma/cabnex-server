@@ -253,50 +253,108 @@ const KM_MASTER = [
   ["yercaud", "madurai", 330],
 ];
 
-// Rate Master — [vehicleCategoryName, rateModel, baseRatePerDay, includedKmPerDay, extraKmRate, driverBataPerDay, state]
+// Rate Master — [vehicleCategoryName, rateModel, baseRatePerDay, includedKmPerDay, extraKmRate, driverBataPerDay, citySlug, taxSlab]
 // Category names must match DB: sedan, ertiga, innova, crysta, tempo-traveler-12-seat, tempo-traveler-17-seat, tempo-traveler-26-seat
+// citySlug must match the `city` field slug in the City collection
 const RATE_MASTER = [
-  // Kerala rates
-  ["sedan", "daily-included-km", 1800, 100, 15, 0, "kerala"],
-  ["ertiga", "daily-included-km", 2000, 100, 18, 0, "kerala"],
-  ["innova", "daily-included-km", 3000, 100, 21, 600, "kerala"],
-  ["crysta", "daily-included-km", 3600, 100, 23, 700, "kerala"],
-  ["tempo-traveler-12-seat", "daily-included-km", 4500, 100, 28, 900, "kerala"],
-  ["tempo-traveler-17-seat", "daily-included-km", 4500, 100, 28, 900, "kerala"],
-  ["tempo-traveler-26-seat", "daily-included-km", 4500, 100, 28, 900, "kerala"],
+  // Cochin rates
+  ["sedan", "daily-included-km", 1800, 100, 15, 0, "cochin", 5],
+  ["ertiga", "daily-included-km", 2000, 100, 18, 0, "cochin", 5],
+  ["innova", "daily-included-km", 3000, 100, 21, 600, "cochin", 5],
+  ["crysta", "daily-included-km", 3600, 100, 23, 700, "cochin", 5],
+  ["tempo-traveler-12-seat", "daily-included-km", 4500, 100, 28, 900, "cochin", 5],
+  ["tempo-traveler-17-seat", "daily-included-km", 4500, 100, 28, 900, "cochin", 5],
+  ["tempo-traveler-26-seat", "daily-included-km", 4500, 100, 28, 900, "cochin", 5],
 
-  ["sedan", "daily-all-km", 1200, 0, 9, 500, "kerala"],
-  ["ertiga", "daily-all-km", 1500, 0, 11, 550, "kerala"],
-  ["innova", "daily-all-km", 1700, 0, 13, 600, "kerala"],
-  ["crysta", "daily-all-km", 2100, 0, 15, 700, "kerala"],
-  ["tempo-traveler-12-seat", "daily-all-km", 2200, 0, 18, 900, "kerala"],
-  ["tempo-traveler-17-seat", "daily-all-km", 2200, 0, 18, 900, "kerala"],
-  ["tempo-traveler-26-seat", "daily-all-km", 2200, 0, 18, 900, "kerala"],
+  ["sedan", "daily-all-km", 1200, 0, 9, 500, "cochin", 5],
+  ["ertiga", "daily-all-km", 1500, 0, 11, 550, "cochin", 5],
+  ["innova", "daily-all-km", 1700, 0, 13, 600, "cochin", 5],
+  ["crysta", "daily-all-km", 2100, 0, 15, 700, "cochin", 5],
+  ["tempo-traveler-12-seat", "daily-all-km", 2200, 0, 18, 900, "cochin", 5],
+  ["tempo-traveler-17-seat", "daily-all-km", 2200, 0, 18, 900, "cochin", 5],
+  ["tempo-traveler-26-seat", "daily-all-km", 2200, 0, 18, 900, "cochin", 5],
 
-  ["sedan", "package-fixed-km", 12000, 500, 17, 500, "kerala"],
-  ["ertiga", "package-fixed-km", 13500, 500, 19, 500, "kerala"],
-  ["innova", "package-fixed-km", 15000, 500, 21, 600, "kerala"],
-  ["crysta", "package-fixed-km", 18000, 500, 23, 700, "kerala"],
-  ["tempo-traveler-12-seat", "package-fixed-km", 22000, 500, 28, 900, "kerala"],
-  ["tempo-traveler-17-seat", "package-fixed-km", 22000, 500, 28, 900, "kerala"],
-  ["tempo-traveler-26-seat", "package-fixed-km", 22000, 500, 28, 900, "kerala"],
+  ["sedan", "package-fixed-km", 12000, 500, 17, 500, "cochin", 5],
+  ["ertiga", "package-fixed-km", 13500, 500, 19, 500, "cochin", 5],
+  ["innova", "package-fixed-km", 15000, 500, 21, 600, "cochin", 5],
+  ["crysta", "package-fixed-km", 18000, 500, 23, 700, "cochin", 5],
+  ["tempo-traveler-12-seat", "package-fixed-km", 22000, 500, 28, 900, "cochin", 5],
+  ["tempo-traveler-17-seat", "package-fixed-km", 22000, 500, 28, 900, "cochin", 5],
+  ["tempo-traveler-26-seat", "package-fixed-km", 22000, 500, 28, 900, "cochin", 5],
 
-  ["sedan", "fixed-route", 0, 0, 0, 0, "kerala"],
-  ["ertiga", "fixed-route", 0, 0, 0, 0, "kerala"],
-  ["innova", "fixed-route", 0, 0, 0, 0, "kerala"],
-  ["crysta", "fixed-route", 0, 0, 0, 0, "kerala"],
-  ["tempo-traveler-12-seat", "fixed-route", 0, 0, 0, 0, "kerala"],
-  ["tempo-traveler-17-seat", "fixed-route", 0, 0, 0, 0, "kerala"],
-  ["tempo-traveler-26-seat", "fixed-route", 0, 0, 0, 0, "kerala"],
+  ["sedan", "fixed-route", 0, 0, 0, 0, "cochin", 5],
+  ["ertiga", "fixed-route", 0, 0, 0, 0, "cochin", 5],
+  ["innova", "fixed-route", 0, 0, 0, 0, "cochin", 5],
+  ["crysta", "fixed-route", 0, 0, 0, 0, "cochin", 5],
+  ["tempo-traveler-12-seat", "fixed-route", 0, 0, 0, 0, "cochin", 5],
+  ["tempo-traveler-17-seat", "fixed-route", 0, 0, 0, 0, "cochin", 5],
+  ["tempo-traveler-26-seat", "fixed-route", 0, 0, 0, 0, "cochin", 5],
 
-  // Tamil Nadu rates
-  ["sedan", "daily-included-km", 1900, 0, 11, 0, "tamil-nadu"],
-  ["ertiga", "daily-included-km", 2300, 0, 13, 0, "tamil-nadu"],
-  ["innova", "daily-included-km", 3000, 100, 21, 600, "tamil-nadu"],
-  ["crysta", "daily-included-km", 3600, 100, 23, 700, "tamil-nadu"],
-  ["tempo-traveler-12-seat", "daily-included-km", 4500, 100, 28, 900, "tamil-nadu"],
-  ["tempo-traveler-17-seat", "daily-included-km", 4500, 100, 28, 900, "tamil-nadu"],
-  ["tempo-traveler-26-seat", "daily-included-km", 4500, 100, 28, 900, "tamil-nadu"],
+  // Chennai rates
+  ["sedan", "daily-included-km", 1900, 0, 11, 0, "chennai", 5],
+  ["ertiga", "daily-included-km", 2300, 0, 13, 0, "chennai", 5],
+  ["innova", "daily-included-km", 3000, 100, 21, 600, "chennai", 5],
+  ["crysta", "daily-included-km", 3600, 100, 23, 700, "chennai", 5],
+  ["tempo-traveler-12-seat", "daily-included-km", 4500, 100, 28, 900, "chennai", 5],
+  ["tempo-traveler-17-seat", "daily-included-km", 4500, 100, 28, 900, "chennai", 5],
+  ["tempo-traveler-26-seat", "daily-included-km", 4500, 100, 28, 900, "chennai", 5],
+
+  ["sedan", "daily-all-km", 1300, 0, 10, 500, "chennai", 5],
+  ["ertiga", "daily-all-km", 1600, 0, 12, 550, "chennai", 5],
+  ["innova", "daily-all-km", 1800, 0, 14, 600, "chennai", 5],
+  ["crysta", "daily-all-km", 2200, 0, 16, 700, "chennai", 5],
+  ["tempo-traveler-12-seat", "daily-all-km", 2300, 0, 19, 900, "chennai", 5],
+  ["tempo-traveler-17-seat", "daily-all-km", 2300, 0, 19, 900, "chennai", 5],
+  ["tempo-traveler-26-seat", "daily-all-km", 2300, 0, 19, 900, "chennai", 5],
+
+  ["sedan", "package-fixed-km", 12500, 500, 18, 500, "chennai", 5],
+  ["ertiga", "package-fixed-km", 14000, 500, 20, 500, "chennai", 5],
+  ["innova", "package-fixed-km", 15500, 500, 22, 600, "chennai", 5],
+  ["crysta", "package-fixed-km", 18500, 500, 24, 700, "chennai", 5],
+  ["tempo-traveler-12-seat", "package-fixed-km", 22500, 500, 29, 900, "chennai", 5],
+  ["tempo-traveler-17-seat", "package-fixed-km", 22500, 500, 29, 900, "chennai", 5],
+  ["tempo-traveler-26-seat", "package-fixed-km", 22500, 500, 29, 900, "chennai", 5],
+
+  ["sedan", "fixed-route", 0, 0, 0, 0, "chennai", 5],
+  ["ertiga", "fixed-route", 0, 0, 0, 0, "chennai", 5],
+  ["innova", "fixed-route", 0, 0, 0, 0, "chennai", 5],
+  ["crysta", "fixed-route", 0, 0, 0, 0, "chennai", 5],
+  ["tempo-traveler-12-seat", "fixed-route", 0, 0, 0, 0, "chennai", 5],
+  ["tempo-traveler-17-seat", "fixed-route", 0, 0, 0, 0, "chennai", 5],
+  ["tempo-traveler-26-seat", "fixed-route", 0, 0, 0, 0, "chennai", 5],
+
+  // Bangalore rates
+  ["sedan", "daily-included-km", 2000, 100, 16, 0, "bangalore", 5],
+  ["ertiga", "daily-included-km", 2200, 100, 18, 0, "bangalore", 5],
+  ["innova", "daily-included-km", 3200, 100, 22, 600, "bangalore", 5],
+  ["crysta", "daily-included-km", 3800, 100, 24, 700, "bangalore", 5],
+  ["tempo-traveler-12-seat", "daily-included-km", 4800, 100, 30, 900, "bangalore", 5],
+  ["tempo-traveler-17-seat", "daily-included-km", 4800, 100, 30, 900, "bangalore", 5],
+  ["tempo-traveler-26-seat", "daily-included-km", 4800, 100, 30, 900, "bangalore", 5],
+
+  ["sedan", "daily-all-km", 1400, 0, 11, 500, "bangalore", 5],
+  ["ertiga", "daily-all-km", 1700, 0, 13, 550, "bangalore", 5],
+  ["innova", "daily-all-km", 1900, 0, 15, 600, "bangalore", 5],
+  ["crysta", "daily-all-km", 2300, 0, 17, 700, "bangalore", 5],
+  ["tempo-traveler-12-seat", "daily-all-km", 2400, 0, 20, 900, "bangalore", 5],
+  ["tempo-traveler-17-seat", "daily-all-km", 2400, 0, 20, 900, "bangalore", 5],
+  ["tempo-traveler-26-seat", "daily-all-km", 2400, 0, 20, 900, "bangalore", 5],
+
+  ["sedan", "package-fixed-km", 13000, 500, 18, 500, "bangalore", 5],
+  ["ertiga", "package-fixed-km", 14500, 500, 20, 500, "bangalore", 5],
+  ["innova", "package-fixed-km", 16000, 500, 22, 600, "bangalore", 5],
+  ["crysta", "package-fixed-km", 19000, 500, 24, 700, "bangalore", 5],
+  ["tempo-traveler-12-seat", "package-fixed-km", 23000, 500, 30, 900, "bangalore", 5],
+  ["tempo-traveler-17-seat", "package-fixed-km", 23000, 500, 30, 900, "bangalore", 5],
+  ["tempo-traveler-26-seat", "package-fixed-km", 23000, 500, 30, 900, "bangalore", 5],
+
+  ["sedan", "fixed-route", 0, 0, 0, 0, "bangalore", 5],
+  ["ertiga", "fixed-route", 0, 0, 0, 0, "bangalore", 5],
+  ["innova", "fixed-route", 0, 0, 0, 0, "bangalore", 5],
+  ["crysta", "fixed-route", 0, 0, 0, 0, "bangalore", 5],
+  ["tempo-traveler-12-seat", "fixed-route", 0, 0, 0, 0, "bangalore", 5],
+  ["tempo-traveler-17-seat", "fixed-route", 0, 0, 0, 0, "bangalore", 5],
+  ["tempo-traveler-26-seat", "fixed-route", 0, 0, 0, 0, "bangalore", 5],
 ];
 
 const CHARGE_MASTER = [
@@ -505,6 +563,13 @@ async function seedRateMaster() {
     catMap[c.category] = c._id;
   }
 
+  // Build city slug → ObjectId map
+  const cities = await City.find().select("city");
+  const cityMap = {};
+  for (const c of cities) {
+    cityMap[c.city] = c._id;
+  }
+
   let created = 0;
   let skipped = 0;
   const errors = [];
@@ -516,11 +581,19 @@ async function seedRateMaster() {
     includedKm,
     extraKmRate,
     driverBata,
-    state,
+    citySlug,
+    taxSlab,
   ] of RATE_MASTER) {
     const catId = catMap[catName];
     if (!catId) {
       errors.push(`CarCategory not found: "${catName}"`);
+      skipped++;
+      continue;
+    }
+
+    const cityId = cityMap[citySlug];
+    if (!cityId) {
+      errors.push(`City not found: "${citySlug}"`);
       skipped++;
       continue;
     }
@@ -530,13 +603,14 @@ async function seedRateMaster() {
         {
           vehicleCategory: catId,
           rateModel,
-          state,
+          city: cityId,
         },
         {
           baseRatePerDay: baseRate,
           includedKmPerDay: includedKm,
           extraKmRate: extraKmRate,
           driverBataPerDay: driverBata,
+          taxSlab: taxSlab ?? 5,
           isActive: true,
         },
         { upsert: true, new: true },
@@ -544,7 +618,7 @@ async function seedRateMaster() {
       created++;
     } catch (err) {
       skipped++;
-      errors.push(`Rate ${catName}|${rateModel}|${state}: ${err.message}`);
+      errors.push(`Rate ${catName}|${rateModel}|${citySlug}: ${err.message}`);
     }
   }
 

@@ -596,13 +596,12 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
       );
     }
 
-    // Get rates for pickup city's state
+    // Get rates for pickup city
     const selectedRateModel = rateModel || "daily-included-km";
-    const state = pickupCity.state;
 
     const rates = await RateMaster.find({
       rateModel: selectedRateModel,
-      state: { $regex: new RegExp(`^${state}`, "i") },
+      city: pickupCityId,
       isActive: true,
     }).populate("vehicleCategory");
 
@@ -613,8 +612,10 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
       let totalAmount = Math.max(perHourTotal, perKmTotal);
       const baseFare = totalAmount;
 
-      const tax = 0; // taxes handled via pricing engine if needed
-      totalAmount += tax;
+      // Tax from rate card
+      const taxSlab = rate.taxSlab || 0;
+      const tax = taxSlab > 0 ? Math.round(totalAmount * taxSlab / 100) : 0;
+      totalAmount = Math.round(totalAmount + tax);
 
       return {
         vehicleCategory: rate.vehicleCategory,
@@ -622,6 +623,7 @@ const searchCarsForTrip = asyncHandler(async (req, res, next) => {
         baseFare,
         totalAmount,
         tax,
+        taxSlab,
         rateModel: rate.rateModel,
       };
     });

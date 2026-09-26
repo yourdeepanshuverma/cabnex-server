@@ -184,10 +184,8 @@ export async function resolveApplicableCommission({
 }
 
 /**
- * Calculate the pricing for a single vehicle category using the full Excel formula.
+ * Calculate the pricing for a single vehicle category using the full formula.
  *
- * From Excel Calculator:
- * ─────────────────────────────────────────────────────────────
  * LIVE COSTING
  * ─────────────────────────────────────────────────────────────
  * Chargeable KM = Garage→Pickup + Intercity + Local + Garage Return
@@ -201,19 +199,19 @@ export async function resolveApplicableCommission({
  *
  * TOTAL TRANSPORT COST = Base + KM Cost + Driver Bata + Toll + Parking + Permit + Night Halt + Other
  *
- * ─────────────────────────────────────────────────────────────
- * COMMERCIAL / FINAL
+ * COMMERCIAL / FINAL (Customer-facing)
  * ─────────────────────────────────────────────────────────────
  * Surcharge       = TOTAL TRANSPORT COST × surchargePercent
  * Cost After Surcharge = TOTAL TRANSPORT COST + Surcharge
  *
  * Cabnex Margin   = Cost After Surcharge × cabnexMarginPercent
- * Cabnex B2B Base = Cost After Surcharge + Cabnex Margin
+ * Subtotal        = Cost After Surcharge + Cabnex Margin
  *
- * Agent Markup    = Cabnex B2B Base × agentMarkupPercent
- * FINAL AGENT PRICE = Cabnex B2B Base + Agent Markup
+ * Tax (GST)       = Subtotal × taxSlab / 100
+ * FINAL PRICE     = Subtotal + Tax
  *
- * Cashback        = FINAL AGENT PRICE × cashbackPercent
+ * Note: Agent markup is NOT included in customer-facing fare.
+ *       It is applied separately when assigning a booking to a vendor.
  *
  * @param {Object} params
  * @returns {Object} Complete pricing breakdown
@@ -225,8 +223,7 @@ export function calculateVehiclePrice({
   charges = {},
   surchargePercent = 0,
   cabnexMarginPercent = 0.05,
-  agentMarkupPercent = 0.08,
-  cashbackPercent = 0.01,
+  taxSlab = 5,
   fixedRouteBase = 0,
 }) {
   const totalNights = Math.max(serviceDays - 1, 0);
@@ -303,15 +300,13 @@ export function calculateVehiclePrice({
   const surchargeAmount = Math.round(totalTransportCost * surchargePercent);
   const costAfterSurcharge = totalTransportCost + surchargeAmount;
 
-  // ─── Commercial Markup ───
+  // ─── Cabnex Margin (Platform Fee) ───
   const cabnexMargin = Math.round(costAfterSurcharge * cabnexMarginPercent);
-  const cabnexB2bBase = costAfterSurcharge + cabnexMargin;
+  const subtotal = costAfterSurcharge + cabnexMargin;
 
-  const agentMarkup = Math.round(cabnexB2bBase * agentMarkupPercent);
-  const finalAgentPrice = cabnexB2bBase + agentMarkup;
-
-  // ─── Cashback ───
-  const cashbackAccrued = Math.round(finalAgentPrice * cashbackPercent * 100) / 100;
+  // ─── Tax (GST) ───
+  const taxAmount = taxSlab > 0 ? Math.round(subtotal * taxSlab / 100) : 0;
+  const totalAmount = subtotal + taxAmount;
 
   return {
     // KM breakdown
@@ -342,13 +337,13 @@ export function calculateVehiclePrice({
     // Commercial
     cabnexMarginPercent,
     cabnexMargin,
-    cabnexB2bBase,
-    agentMarkupPercent,
-    agentMarkup,
-    finalAgentPrice,
-    totalAmount: finalAgentPrice,
-    cashbackPercent,
-    cashbackAccrued,
+
+    // Tax
+    taxSlab,
+    taxAmount,
+
+    // Final
+    totalAmount,
 
     // Meta
     serviceDays,
@@ -359,7 +354,7 @@ export function calculateVehiclePrice({
 
 /**
  * Calculate pricing for all active vehicle categories for a trip.
- * Fetches rate data from Rate Master based on pickup city's state.
+ * Fetches rate data from Rate Master based on pickup city.
  *
  * @param {Object} params
  * @param {string} [params.garageCityId] - Garage base city ObjectId
@@ -371,7 +366,7 @@ export function calculateVehiclePrice({
  * @param {number} params.chargeableKm - Total chargeable km
  * @param {Object} [params.charges] - Manual charges { toll, parking, permit, ... }
  * @param {Date} params.travelDate - Travel/arrival date (for surcharge check)
- * @param {string} [params.agentGradeId] - Agent grade ObjectId (optional)
+ * @param {string} [params.agentGradeId] - Agent grade ObjectId (optional, stored for vendor assignment)
  * @param {number} [params.cabnexMarginPercent] - Cabnex margin % (default 0.05)
  * @param {number} [params.fixedRouteBase] - Fixed route base price (for fixed-route model only)
  * @returns {Promise<Object>} Categories with pricing
@@ -390,7 +385,7 @@ export async function calculatePricingForAllCategories({
   cabnexMarginPercent = 0.05,
   fixedRouteBase = 0,
 }) {
-  // Get the pickup city's state for rate lookup
+  // Get the pickup city's state for permit logic
   const pickupCity = await City.findById(pickupCityId).select("state city");
   if (!pickupCity) {
     throw new Error("Pickup city not found");
@@ -436,16 +431,16 @@ export async function calculatePricingForAllCategories({
     categoryPermitMap = await getCategoryPermitCharges({ foreignStates });
   }
 
-  // Get all active rates for this state and rate model
+  // Get all active rates for this city and rate model
   const rates = await RateMaster.find({
     rateModel,
-    state: { $regex: new RegExp(`^${state}`, "i") },
+    city: pickupCityId,
     isActive: true,
   }).populate("vehicleCategory");
 
   if (!rates || rates.length === 0) {
     throw new Error(
-      `No rates found for state "${state}" with rate model "${rateModel}". Add rates to Rate Master.`,
+      `No rates found for city "${pickupCity.city}" with rate model "${rateModel}". Add rates to Rate Master.`,
     );
   }
 
@@ -453,16 +448,11 @@ export async function calculatePricingForAllCategories({
   const { surchargePercent, matchedPeriod } =
     await getApplicableSurcharge(travelDate, pickupCityId);
 
-  // Get agent grade markup (if provided)
-  let agentMarkupPercent = 0.08; // default
-  let cashbackPercent = 0.01; // default
+  // Get agent grade info (stored for later vendor assignment, NOT included in customer fare)
   let agentGradeName = null;
-
   if (agentGradeId) {
     const grade = await AgentGrade.findById(agentGradeId);
     if (grade) {
-      agentMarkupPercent = grade.cabMarkupPercent;
-      cashbackPercent = grade.cashbackPercent;
       agentGradeName = grade.grade;
     }
   }
@@ -511,8 +501,7 @@ export async function calculatePricingForAllCategories({
       charges: mergedCharges,
       surchargePercent,
       cabnexMarginPercent: effectiveCabnexMarginPercent,
-      agentMarkupPercent,
-      cashbackPercent,
+      taxSlab: rate.taxSlab || 0,
       fixedRouteBase,
     });
 

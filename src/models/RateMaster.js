@@ -17,10 +17,10 @@ const rateMasterSchema = new Schema(
       ],
       required: [true, "Rate model is required."],
     },
-    state: {
-      type: String,
-      required: [true, "State is required."],
-      set: (v) => v?.toLowerCase().trim().replace(/\s+/g, "-"),
+    city: {
+      type: Types.ObjectId,
+      ref: "City",
+      required: [true, "City is required."],
     },
     baseRatePerDay: {
       type: Number,
@@ -42,6 +42,12 @@ const rateMasterSchema = new Schema(
       default: 0,
       min: 0,
     },
+    taxSlab: {
+      type: Number,
+      default: 5,
+      min: 0,
+      max: 100,
+    },
     isActive: { type: Boolean, default: true },
   },
   {
@@ -49,9 +55,9 @@ const rateMasterSchema = new Schema(
   },
 );
 
-// Compound unique index — one rate per vehicle/model/state combination
+// Compound unique index — one rate per vehicle/model/city combination
 rateMasterSchema.index(
-  { vehicleCategory: 1, rateModel: 1, state: 1 },
+  { vehicleCategory: 1, rateModel: 1, city: 1 },
   { unique: true },
 );
 
